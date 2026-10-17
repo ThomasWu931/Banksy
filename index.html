@@ -3,33 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f1f17">
-<title>Sprout Focus</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='29' y='34' width='6' height='22' rx='2' fill='%238b5a3c'/%3E%3Ccircle cx='32' cy='26' r='18' fill='%235fd38d'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#0c0f0d">
+<title>Banksy</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%23f4c542'/%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='%23c99a1c' stroke-width='3'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial' font-weight='700' font-size='28' fill='%238a6a10'%3E$%3C/text%3E%3C/svg%3E">
 <style>
   :root{
-    --bg:#0f1f17; --bg2:#14291f; --card:#1a3628; --line:#28503c;
-    --text:#e9f4ed; --muted:#9dbaa9; --accent:#5fd38d; --accent-d:#3fb370;
-    --gold:#f5c451; --danger:#e57373;
+    --bg:#0c0f0d; --bg2:#121714; --card:#161c18; --line:#25302a;
+    --text:#eef3ef; --muted:#8fa197; --green:#2fd27a; --green-d:#1fa95f;
+    --gold:#f4c542; --gold-d:#c99a1c; --danger:#ef6b6b;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    background:radial-gradient(ellipse at top,#1d3d2d 0%,var(--bg) 60%) fixed;
+    background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(244,197,66,.14),transparent 70%),var(--bg) fixed;
     color:var(--text); display:flex; flex-direction:column; min-height:100vh;
     -webkit-tap-highlight-color:transparent;
   }
   button{font:inherit;color:inherit;cursor:pointer}
   .hidden{display:none!important}
+  .num{font-variant-numeric:tabular-nums}
 
   /* Header */
   .top{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;max-width:720px;width:100%;margin:0 auto}
-  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.15rem;letter-spacing:.3px}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.15rem;letter-spacing:.4px}
   .brand svg{width:26px;height:26px}
-  .chip{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;color:var(--gold)}
-  .chip .coin{width:18px;height:18px;border-radius:50%;background:var(--gold);color:#5a4300;font-size:.7rem;display:grid;place-items:center}
+  .right{display:flex;align-items:center;gap:8px}
+  .chip{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:800;color:var(--gold)}
+  .chip:disabled{opacity:.6;cursor:default}
   .debug{font-size:.7rem;background:var(--danger);color:#fff;border-radius:6px;padding:2px 6px;margin-left:6px}
+  .acct{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600;font-size:.85rem;color:var(--text)}
+  .acct.avatar{padding:0;width:34px;height:34px;overflow:hidden;display:grid;place-items:center;background:var(--gold);color:#3d2e05;font-weight:800}
+  .acct.avatar img{width:100%;height:100%;object-fit:cover}
 
   main{flex:1;width:100%;max-width:720px;margin:0 auto;padding:0 16px 96px}
   .view{display:none;animation:fade .25s ease}
@@ -39,103 +44,99 @@
   /* Focus */
   #view-focus{text-align:center}
   .hint{color:var(--muted);margin:6px 0 14px;min-height:1.3em}
-  .stage{position:relative;width:min(300px,78vw);aspect-ratio:1;margin:0 auto}
+  .stage{position:relative;width:min(290px,76vw);aspect-ratio:1;margin:0 auto}
   .ring{position:absolute;inset:0;transform:rotate(-90deg)}
   .ring circle{fill:none;stroke-width:10}
-  .ring .track{stroke:rgba(255,255,255,.07)}
-  .ring .prog{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .3s linear}
-  .stage .bg{position:absolute;inset:18px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#24503a,#183527)}
-  .tree{position:absolute;inset:18px;display:grid;place-items:center}
-  .tree svg{width:82%;height:82%}
-  .time{font-size:3.4rem;font-weight:300;font-variant-numeric:tabular-nums;margin:14px 0 2px;letter-spacing:1px}
-  .earn{color:var(--gold);font-weight:600;margin-bottom:18px}
-  .species{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-  .sp{background:var(--card);border:2px solid transparent;border-radius:14px;padding:6px 8px 4px;width:74px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.75rem;color:var(--muted)}
-  .sp svg{width:48px;height:46px}
-  .sp.on{border-color:var(--accent);color:var(--text)}
+  .ring .track{stroke:rgba(255,255,255,.06)}
+  .ring .prog{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset .3s linear}
+  .stage .bg{position:absolute;inset:18px;border-radius:50%;background:radial-gradient(circle at 50% 30%,#1d2620,#121714)}
+  .art{position:absolute;inset:18px;display:grid;place-items:center}
+  .art svg{width:80%;height:80%}
+  .time{font-size:3.4rem;font-weight:300;margin:14px 0 2px;letter-spacing:1px}
+  .earn{color:var(--gold);font-weight:700;margin-bottom:20px}
+  .earn small{display:block;color:var(--muted);font-weight:500;margin-top:2px}
   .slider{width:min(360px,100%);margin:0 auto 14px}
-  input[type=range]{width:100%;accent-color:var(--accent)}
+  input[type=range]{width:100%;accent-color:var(--gold)}
   .toggle{display:flex;align-items:center;justify-content:center;gap:8px;font-size:.85rem;color:var(--muted);margin-bottom:20px}
-  .toggle input{accent-color:var(--accent);width:18px;height:18px}
+  .toggle input{accent-color:var(--gold);width:18px;height:18px}
 
-  .btn{border:none;border-radius:999px;padding:14px 44px;font-weight:700;font-size:1.05rem;transition:transform .1s,background .2s}
+  .btn{border:none;border-radius:999px;padding:14px 48px;font-weight:800;font-size:1.05rem;transition:transform .1s,background .2s}
   .btn:active{transform:scale(.97)}
-  .btn.primary{background:var(--accent);color:#08351c}
-  .btn.primary:hover{background:#74e0a0}
+  .btn.primary{background:var(--gold);color:#3d2e05}
+  .btn.primary:hover{background:#ffd45c}
   .btn.ghost{background:transparent;border:2px solid var(--line);color:var(--muted)}
   .btn.danger{background:var(--danger);color:#3b0d0d}
-  .btn.small{padding:8px 18px;font-size:.9rem}
+  .btn.small{padding:9px 20px;font-size:.92rem}
   .btn:disabled{opacity:.4;cursor:not-allowed}
 
-  /* Cards */
-  h2{font-size:1.25rem;margin:8px 0 14px}
-  h3{font-size:1rem;margin:22px 0 10px;color:var(--muted);font-weight:600}
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
-  .stat b{display:block;font-size:1.35rem}
-  .stat span{font-size:.75rem;color:var(--muted)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;margin-top:14px}
-  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;text-align:center;font-size:.72rem;color:var(--muted)}
-  .tile svg{width:100%;height:70px}
-  .tile b{color:var(--text);display:block;font-size:.8rem}
-  .empty{color:var(--muted);text-align:center;padding:40px 10px}
-
-  .balance{background:linear-gradient(135deg,#2b5a40,#1a3628);border:1px solid var(--line);border-radius:20px;padding:22px;text-align:center}
-  .balance .amt{font-size:2.8rem;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+  /* Wallet */
+  h3{font-size:.85rem;margin:24px 0 10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+  .balance{background:linear-gradient(140deg,#2a2410,#161c18 60%);border:1px solid #3a3217;border-radius:22px;padding:24px;text-align:center}
+  .balance .amt{font-size:3rem;font-weight:800;color:var(--gold)}
   .balance small{color:var(--muted)}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+  .stat b{display:block;font-size:1.2rem}
+  .stat span{font-size:.72rem;color:var(--muted)}
+  .sync{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:.85rem;color:var(--muted)}
+  .sync .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:8px}
+  .sync .dot.ok{background:var(--green)}
+  .sync .dot.busy{background:var(--gold)}
+  .sync .dot.err{background:var(--danger)}
+
+  .redeem{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;text-align:center}
+  .picker{position:relative;display:flex;align-items:center;justify-content:center;gap:2px;height:220px;margin:0 auto 14px;user-select:none}
+  .picker .band{position:absolute;left:12%;right:12%;top:50%;height:44px;transform:translateY(-50%);border-radius:12px;background:rgba(244,197,66,.1);border:1px solid rgba(244,197,66,.35);pointer-events:none}
+  .picker .sym{font-size:2rem;font-weight:800;color:var(--gold);z-index:1}
+  .wheel{height:220px;width:86px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;z-index:1;
+    -webkit-mask-image:linear-gradient(transparent,#000 35%,#000 65%,transparent);mask-image:linear-gradient(transparent,#000 35%,#000 65%,transparent)}
+  .wheel::-webkit-scrollbar{display:none}
+  .wheel .pad{height:88px}
+  .wheel .it{height:44px;line-height:44px;scroll-snap-align:center;font-size:1.6rem;font-weight:700;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;transition:color .15s,transform .15s}
+  .wheel .it.on{color:var(--text);transform:scale(1.12)}
+  .wheel.cents{width:70px}
+  .pick-note{min-height:1.3em;font-size:.85rem;color:var(--muted);margin-bottom:12px}
+  .pick-note.err{color:var(--danger)}
   .list{display:flex;flex-direction:column;gap:8px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
-  .row .lbl{font-weight:600}
-  .row .sub{font-size:.8rem;color:var(--muted)}
-  .price{color:var(--gold);font-weight:700;white-space:nowrap}
-  .custom{display:flex;gap:8px;flex-wrap:wrap}
-  .custom input{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--text);font:inherit}
-  .neg{color:var(--danger);font-weight:700}
+  .row .sub{font-size:.85rem;color:var(--muted)}
+  .neg{color:var(--danger);font-weight:800}
+  .empty{color:var(--muted);text-align:center;padding:16px}
   .reset{margin-top:28px;text-align:center}
   .link{background:none;border:none;color:var(--muted);text-decoration:underline;font-size:.85rem}
 
   /* Tabs */
-  .tabs{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:6px;padding:10px 10px calc(10px + env(safe-area-inset-bottom));background:rgba(15,31,23,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
-  .tabs button{background:none;border:none;color:var(--muted);padding:8px 22px;border-radius:12px;font-weight:600;font-size:.9rem}
-  .tabs button.active{color:var(--accent);background:var(--card)}
+  .tabs{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:6px;padding:10px 10px calc(10px + env(safe-area-inset-bottom));background:rgba(12,15,13,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+  .tabs button{background:none;border:none;color:var(--muted);padding:8px 26px;border-radius:12px;font-weight:700;font-size:.9rem}
+  .tabs button.active{color:var(--gold);background:var(--card)}
   .tabs button:disabled{opacity:.35;cursor:not-allowed}
 
   /* Modal + toast */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:20px;z-index:20}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:20px;z-index:20}
   .sheet{background:var(--bg2);border:1px solid var(--line);border-radius:22px;padding:24px;max-width:360px;width:100%;text-align:center;animation:pop .2s ease}
   @keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
-  .sheet .art svg{width:150px;height:140px}
-  .sheet h3{color:var(--text);font-size:1.25rem;margin:8px 0}
+  .sheet .m-art svg{width:140px;height:130px}
+  .sheet .big{font-size:2.4rem;font-weight:800;color:var(--gold);margin:4px 0}
+  .sheet h4{color:var(--text);font-size:1.2rem;margin:6px 0}
   .sheet p{color:var(--muted);margin:0 0 18px}
   .sheet .acts{display:flex;gap:10px;justify-content:center}
-  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--line);padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:30;font-weight:600}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--line);padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:30;font-weight:600;max-width:90vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%)}
-
-  /* Account + sync */
-  .right{display:flex;align-items:center;gap:8px}
-  .acct{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600;font-size:.85rem;color:var(--text)}
-  .acct.avatar{padding:0;width:34px;height:34px;overflow:hidden;display:grid;place-items:center;background:var(--accent);color:#08351c;font-weight:800}
-  .acct.avatar img{width:100%;height:100%;object-fit:cover}
-  .sync{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:.85rem;color:var(--muted)}
-  .sync .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:8px}
-  .sync .dot.ok{background:var(--accent)}
-  .sync .dot.busy{background:var(--gold)}
-  .sync .dot.err{background:var(--danger)}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js?v=2"></script>
+<script src="firebase-config.js?v=3"></script>
 </head>
 <body>
 
 <header class="top">
   <div class="brand">
-    <svg viewBox="0 0 64 64"><rect x="29" y="34" width="6" height="22" rx="2" fill="#8b5a3c"/><circle cx="32" cy="26" r="18" fill="#5fd38d"/></svg>
-    Sprout<span id="debugBadge" class="debug hidden">DEBUG</span>
+    <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="#f4c542"/><circle cx="32" cy="32" r="21" fill="none" stroke="#c99a1c" stroke-width="3"/><text x="32" y="42" text-anchor="middle" font-family="Arial" font-weight="700" font-size="28" fill="#8a6a10">$</text></svg>
+    Banksy<span id="debugBadge" class="debug hidden">DEBUG</span>
   </div>
   <div class="right">
-    <button class="chip" data-go="wallet" aria-label="Wallet"><span class="coin">$</span><span id="chipBal">$0.00</span></button>
+    <button class="chip num" data-go="wallet" aria-label="Wallet"><span id="chipBal">$0.00</span></button>
     <button class="acct hidden" id="acctBtn">Sign in</button>
   </div>
 </header>
@@ -143,53 +144,49 @@
 <main>
   <!-- FOCUS -->
   <section id="view-focus" class="view active">
-    <p class="hint" id="hint">Plant a tree, then stay on this page while it grows.</p>
+    <p class="hint" id="hint">Start a session and stay on this page to get paid.</p>
     <div class="stage">
       <div class="bg"></div>
       <svg class="ring" viewBox="0 0 300 300"><circle class="track" cx="150" cy="150" r="140"/><circle id="prog" class="prog" cx="150" cy="150" r="140"/></svg>
-      <div class="tree" id="tree"></div>
+      <div class="art" id="art"></div>
     </div>
-    <div class="time" id="time">25:00</div>
-    <div class="earn" id="earn"></div>
+    <div class="time num" id="time">25:00</div>
+    <div class="earn num" id="earn"></div>
 
     <div id="setup">
-      <div class="species" id="species"></div>
-      <div class="slider"><input type="range" id="dur" min="5" max="120" step="5" value="25" aria-label="Focus duration in minutes"></div>
-      <label class="toggle"><input type="checkbox" id="strict" checked> Strict mode: leaving this tab for 10s+ withers the tree</label>
+      <div class="slider"><input type="range" id="dur" min="5" max="120" step="5" value="25" aria-label="Session length in minutes"></div>
+      <label class="toggle"><input type="checkbox" id="strict" checked> Strict mode: leaving this tab for 10s+ forfeits the session</label>
     </div>
 
-    <button class="btn primary" id="plant">Plant</button>
-    <button class="btn ghost hidden" id="giveup">Give up</button>
-  </section>
-
-  <!-- FOREST -->
-  <section id="view-forest" class="view">
-    <h2>Your forest</h2>
-    <div class="stats">
-      <div class="stat"><b id="stTrees">0</b><span>Trees grown</span></div>
-      <div class="stat"><b id="stTime">0m</b><span>Focused</span></div>
-      <div class="stat"><b id="stDead">0</b><span>Withered</span></div>
-    </div>
-    <div class="grid" id="forestGrid"></div>
+    <button class="btn primary" id="start">Start</button>
+    <button class="btn ghost hidden" id="quit">Quit</button>
   </section>
 
   <!-- WALLET -->
   <section id="view-wallet" class="view">
     <div class="balance">
       <small>Balance</small>
-      <div class="amt" id="walletBal">$0.00</div>
-      <small>Every minute of completed focus earns 1¢</small>
+      <div class="amt num" id="walletBal">$0.00</div>
+      <small>1 minute of completed focus = 1¢</small>
+    </div>
+    <div class="stats">
+      <div class="stat"><b class="num" id="stEarned">$0.00</b><span>Total earned</span></div>
+      <div class="stat"><b class="num" id="stDone">0</b><span>Sessions paid</span></div>
+      <div class="stat"><b class="num" id="stFail">0</b><span>Forfeited</span></div>
     </div>
     <div class="sync" id="syncBox"><span><span class="dot" id="syncDot"></span><span id="syncText">Saved on this device only</span></span><button class="btn primary small hidden" id="syncSignIn">Sign in</button></div>
 
-    <h3>Redeem a reward</h3>
-    <div class="list" id="rewards"></div>
-
-    <h3>Custom redeem</h3>
-    <div class="custom">
-      <input id="cLabel" placeholder="What for? (optional)" maxlength="40">
-      <input id="cAmt" type="number" min="0.01" step="0.01" placeholder="Amount ($)">
-      <button class="btn primary small" id="cGo">Redeem</button>
+    <h3>Redeem</h3>
+    <div class="redeem">
+      <div class="picker">
+        <div class="band"></div>
+        <span class="sym">$</span>
+        <div class="wheel" id="wDollars" aria-label="Dollars"></div>
+        <span class="sym">.</span>
+        <div class="wheel cents" id="wCents" aria-label="Cents"></div>
+      </div>
+      <div class="pick-note" id="pickNote">Scroll to choose an amount</div>
+      <button class="btn primary" id="redeemBtn" disabled>Redeem</button>
     </div>
 
     <h3>History</h3>
@@ -201,14 +198,14 @@
 
 <nav class="tabs">
   <button data-go="focus" class="active">Focus</button>
-  <button data-go="forest">Forest</button>
   <button data-go="wallet">Wallet</button>
 </nav>
 
 <div class="modal hidden" id="modal">
   <div class="sheet">
-    <div class="art" id="mArt"></div>
-    <h3 id="mTitle"></h3>
+    <div class="m-art" id="mArt"></div>
+    <div class="big num hidden" id="mBig"></div>
+    <h4 id="mTitle"></h4>
     <p id="mBody"></p>
     <div class="acts" id="mActs"></div>
   </div>
@@ -218,27 +215,13 @@
 <script>
 (() => {
   // ---------- Config ----------
-  const KEY = 'sprout-focus-v1';          // guest (signed-out) progress
+  const KEY = 'sprout-focus-v1';          // guest (signed-out) progress; name kept so existing balances carry over
   const SESSION_KEY = 'sprout-session-v1'; // the running timer, always per-device
   const DEBUG = new URLSearchParams(location.search).has('debug'); // ?debug => 1 "minute" = 1 second
   const MIN_MS = DEBUG ? 1000 : 60000;
   const GRACE_MS = 10000;
   const CIRC = 2 * Math.PI * 140;
-
-  const SPECIES = {
-    oak:    { name: 'Oak',     leaf: '#5cbf60', leaf2: '#3e9a48', shape: 'round' },
-    pine:   { name: 'Pine',    leaf: '#2f8a62', leaf2: '#1f6849', shape: 'cone'  },
-    cherry: { name: 'Blossom', leaf: '#f6a1c0', leaf2: '#e9739d', shape: 'round' },
-    maple:  { name: 'Maple',   leaf: '#ff9446', leaf2: '#e36a2b', shape: 'round' },
-  };
-
-  const REWARDS = [
-    { label: '15-minute break',   sub: 'Step away guilt-free', cents: 25 },
-    { label: 'Snack',             sub: 'Treat yourself',       cents: 75 },
-    { label: 'One episode',       sub: 'Of whatever you\'re watching', cents: 100 },
-    { label: 'Hour of gaming',    sub: 'You earned it',        cents: 200 },
-    { label: 'Night off',         sub: 'No studying tonight',  cents: 500 },
-  ];
+  const ITEM = 44; // wheel row height (px)
 
   // ---------- Helpers ----------
   const $ = s => document.querySelector(s);
@@ -251,17 +234,16 @@
     return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(s).padStart(2, '0');
   };
   const fmtMins = m => (m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm');
-  const fmtDate = d => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   const byDate = arr => arr.slice().sort((a, b) => b.date - a.date);
 
   // ---------- State ----------
-  const defaults = () => ({ balance: 0, totalMinutes: 0, trees: [], redemptions: [], species: 'oak', duration: 25, strict: true });
+  // `trees` holds every finished session ({minutes, date, dead}); the name is kept for compatibility with saved data.
+  const defaults = () => ({ balance: 0, totalMinutes: 0, trees: [], redemptions: [], duration: 25, strict: true });
   const pick = d => ({
     balance: Number(d.balance) || 0,
     totalMinutes: Number(d.totalMinutes) || 0,
     trees: Array.isArray(d.trees) ? d.trees : [],
     redemptions: Array.isArray(d.redemptions) ? d.redemptions : [],
-    species: SPECIES[d.species] ? d.species : 'oak',
     duration: Number(d.duration) || 25,
     strict: d.strict !== false,
   });
@@ -270,8 +252,7 @@
   function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
   function loadGuest() {
-    const raw = readJSON(KEY) || {};
-    const g = pick(raw);
+    const g = pick(readJSON(KEY) || {});
     g.trees.forEach(t => { if (!t.id) t.id = uid(); });
     g.redemptions.forEach(r => { if (!r.id) r.id = uid(); });
     return g;
@@ -279,17 +260,17 @@
   function loadSession() {
     const s = readJSON(SESSION_KEY);
     if (s) return s;
-    const old = readJSON(KEY); // migrate from the first version, which stored the session inside the main state
+    const old = readJSON(KEY);
     return old && old.session ? old.session : null;
   }
 
   let state = loadGuest();
   let session = loadSession();
-  let hiddenAt = null, lastStage = null, lastSp = null, lastBeat = 0;
+  let hiddenAt = null, lastCoins = null, lastBeat = 0;
 
   function saveLocal() {
     writeJSON(SESSION_KEY, session);
-    if (!cloud.ref) writeJSON(KEY, state); // when signed in, the cloud holds progress
+    if (!cloud.ref) writeJSON(KEY, state);
   }
 
   // ---------- Cloud sync (Firebase) ----------
@@ -320,7 +301,7 @@
     cloud.ref = cloud.db.collection('users').doc(user.uid);
     setStatus('busy');
     try { await mergeGuest(); } catch (e) { console.error(e); toast('Could not reach the cloud. Will retry when online.'); }
-    if (!cloud.ref) return; // signed out while merging
+    if (!cloud.ref) return;
     cloud.unsub = cloud.ref.onSnapshot({ includeMetadataChanges: true }, snap => {
       state = pick(snap.data() || {});
       setStatus(snap.metadata.hasPendingWrites ? 'busy' : 'ok');
@@ -328,7 +309,7 @@
     }, err => { console.error(err); setStatus('err'); });
   }
 
-  // Move any progress earned while signed out on this device into the account.
+  // Move any money earned while signed out on this device into the account.
   async function mergeGuest() {
     const g = loadGuest();
     const hasData = g.balance > 0 || g.trees.length > 0 || g.redemptions.length > 0;
@@ -345,8 +326,8 @@
       }
     });
     if (hasData) {
-      writeJSON(KEY, Object.assign(defaults(), { species: g.species, duration: g.duration, strict: g.strict }));
-      toast(`Moved ${money(g.balance)} and ${g.trees.length} tree${g.trees.length === 1 ? '' : 's'} from this device into your account`);
+      writeJSON(KEY, Object.assign(defaults(), { duration: g.duration, strict: g.strict }));
+      toast(`Moved ${money(g.balance)} from this device into your account`);
     }
   }
 
@@ -368,7 +349,6 @@
 
   function renderAccount() {
     const btn = $('#acctBtn');
-    btn.classList.toggle('hidden', !cloud.enabled);
     if (cloud.user) {
       const u = cloud.user;
       btn.className = 'acct avatar';
@@ -392,12 +372,12 @@
   }
 
   // ---------- Mutations (local first, then cloud) ----------
-  function recordTree(tree, earned) {
-    state.trees.unshift(tree);
+  function recordSession(entry, earned) {
+    state.trees.unshift(entry);
     if (earned) { state.balance += earned; state.totalMinutes += earned; }
     saveLocal();
     if (cloud.ref) {
-      const FV = cloud.FV, u = { trees: FV.arrayUnion(tree) };
+      const FV = cloud.FV, u = { trees: FV.arrayUnion(entry) };
       if (earned) { u.balance = FV.increment(earned); u.totalMinutes = FV.increment(earned); }
       cloudWrite(u);
     }
@@ -410,12 +390,13 @@
     prefTimer = setTimeout(() => cloudWrite({ [k]: v }), 400);
   }
 
-  async function spend(label, cents) {
-    const entry = { id: uid(), label, cents, date: Date.now() };
+  async function spend(cents) {
+    const entry = { id: uid(), label: 'Redeem', cents, date: Date.now() };
+    const done = () => { toast(`Redeemed ${money(cents)}`); setPicker(0); };
     if (!cloud.ref) {
-      if (cents > state.balance) return toast('Not enough money yet');
+      if (cents > state.balance) return toast('Not enough money');
       state.balance -= cents; state.redemptions.unshift(entry); saveLocal(); renderWallet();
-      return toast(`Redeemed: ${label}`);
+      return done();
     }
     const ref = cloud.ref, FV = cloud.FV;
     try {
@@ -425,111 +406,94 @@
         if (bal < cents) throw new Error('INSUFFICIENT');
         tx.set(ref, { balance: bal - cents, redemptions: FV.arrayUnion(entry) }, { merge: true });
       });
-      toast(`Redeemed: ${label}`);
+      done();
     } catch (e) {
-      toast(e.message === 'INSUFFICIENT' ? 'Not enough money yet' : 'Could not redeem. Are you online?');
+      toast(e.message === 'INSUFFICIENT' ? 'Not enough money' : 'Could not redeem. Are you online?');
     }
   }
 
   function resetAll() {
-    const keep = { species: state.species, duration: state.duration, strict: state.strict };
+    const keep = { duration: state.duration, strict: state.strict };
     state = Object.assign(defaults(), keep);
     session = null;
     saveLocal();
     if (cloud.ref) cloud.ref.set(Object.assign(defaults(), keep, { createdAt: cloud.FV.serverTimestamp() })).catch(console.error);
-    lastStage = null; renderAll(); toast('Data reset');
+    lastCoins = null; renderAll(); toast('Data reset');
   }
 
-  // ---------- Tree art ----------
-  function treeSVG(sp, stage, dead) {
-    const s = SPECIES[sp] || SPECIES.oak;
-    const leaf = dead ? '#8a7a66' : s.leaf, leaf2 = dead ? '#6b5c4b' : s.leaf2, trunk = dead ? '#5b4636' : '#8b5a3c';
-    let g = '<ellipse cx="100" cy="172" rx="62" ry="13" fill="#5a4230"/><ellipse cx="100" cy="168" rx="55" ry="9" fill="#7a5c42"/>';
-    let t = '';
-    if (stage === 0) {
-      t = '<ellipse cx="100" cy="163" rx="9" ry="6" fill="#a7814f"/>';
-    } else if (stage === 1) {
-      t = `<path d="M100 166 Q99 150 100 138" stroke="${dead ? trunk : '#6fae4a'}" stroke-width="4" fill="none" stroke-linecap="round"/>
-           <ellipse cx="88" cy="140" rx="12" ry="6" fill="${leaf}" transform="rotate(-25 88 140)"/>
-           <ellipse cx="112" cy="136" rx="12" ry="6" fill="${leaf2}" transform="rotate(25 112 136)"/>`;
-    } else {
-      const h = [0, 0, 44, 66, 84][stage], w = [0, 0, 5, 8, 11][stage], r = [0, 0, 24, 34, 44][stage];
-      const top = 166 - h;
-      t = `<rect x="${100 - w / 2}" y="${top}" width="${w}" height="${h + 2}" rx="${w / 3}" fill="${trunk}"/>`;
-      if (s.shape === 'cone') {
-        for (let i = 0; i < stage; i++) {
-          const y = top + 10 - i * (r * 0.55), hw = r * (1.05 - i * 0.18);
-          t += `<polygon points="${100 - hw},${y + r * 0.45} ${100 + hw},${y + r * 0.45} 100,${y - r * 0.75}" fill="${i % 2 ? leaf2 : leaf}"/>`;
-        }
-      } else {
-        t += `<circle cx="${100 - r * 0.62}" cy="${top + r * 0.15}" r="${r * 0.68}" fill="${leaf2}"/>
-              <circle cx="${100 + r * 0.62}" cy="${top + r * 0.15}" r="${r * 0.68}" fill="${leaf2}"/>
-              <circle cx="100" cy="${top - r * 0.35}" r="${r}" fill="${leaf}"/>`;
-        if (sp === 'cherry' && !dead && stage >= 3) {
-          [[-18, -30], [14, -42], [24, -12], [-26, -6], [2, -18]].forEach(([dx, dy]) =>
-            t += `<circle cx="${100 + dx * r / 44}" cy="${top + dy * r / 44}" r="3" fill="#fff0f5"/>`);
-        }
-      }
+  // ---------- Coin art ----------
+  function coinStack(n, lost) {
+    const face = lost ? '#6d7470' : '#f4c542', edge = lost ? '#4b514d' : '#c99a1c', rim = lost ? '#5a605c' : '#dcae2c';
+    let g = '<ellipse cx="100" cy="174" rx="64" ry="12" fill="rgba(0,0,0,.35)"/>';
+    for (let i = 0; i < n; i++) {
+      const y = 158 - i * 11, dx = lost ? (i % 2 ? 6 : -4) * (i / 3) : (i % 3 === 1 ? 2 : i % 3 === 2 ? -2 : 0);
+      g += `<g transform="translate(${dx} 0)">
+        <ellipse cx="100" cy="${y + 9}" rx="46" ry="12" fill="${edge}"/>
+        <rect x="54" y="${y}" width="92" height="9" fill="${edge}"/>
+        <ellipse cx="100" cy="${y}" rx="46" ry="12" fill="${face}"/>
+        <ellipse cx="100" cy="${y}" rx="35" ry="8.5" fill="none" stroke="${rim}" stroke-width="2"/>
+      </g>`;
     }
-    if (dead) t = `<g transform="rotate(7 100 166)">${t}</g>`;
-    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg">${g}${t}</svg>`;
+    if (n && !lost) {
+      const y = 158 - (n - 1) * 11;
+      g += `<text x="0" y="6" text-anchor="middle" font-family="Arial" font-weight="800" font-size="18" fill="#8a6a10" transform="translate(100 ${y}) scale(1 .6)">$</text>`;
+    }
+    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
   }
-  const stageFor = p => (p >= 1 ? 4 : p < 0.15 ? 1 : p < 0.5 ? 2 : 3);
+  const coinsFor = p => Math.max(1, Math.min(10, Math.ceil(p * 10)));
 
   // ---------- Focus view ----------
-  function renderSpecies() {
-    $('#species').innerHTML = Object.entries(SPECIES).map(([k, s]) =>
-      `<button class="sp ${k === state.species ? 'on' : ''}" data-sp="${k}" aria-label="${s.name}">${treeSVG(k, 4, false)}<span>${s.name}</span></button>`
-    ).join('');
-  }
-
   function syncControls() {
     $('#dur').value = state.duration;
     $('#strict').checked = state.strict;
-    renderSpecies();
   }
 
   function renderFocus() {
     const s = session, now = Date.now();
-    let p = 0, remain = state.duration * MIN_MS, sp = state.species, mins = state.duration;
-    if (s) { p = Math.min(1, (now - s.start) / (s.end - s.start)); remain = Math.max(0, s.end - now); sp = s.species; mins = s.minutes; }
-    const stage = s ? stageFor(p) : 3;
-    if (stage !== lastStage || sp !== lastSp) { $('#tree').innerHTML = treeSVG(sp, stage, false); lastStage = stage; lastSp = sp; }
+    let p = 0, remain = state.duration * MIN_MS, mins = state.duration;
+    if (s) { p = Math.min(1, (now - s.start) / (s.end - s.start)); remain = Math.max(0, s.end - now); mins = s.minutes; }
+    const coins = s ? coinsFor(p) : 4;
+    if (coins !== lastCoins) { $('#art').innerHTML = coinStack(coins, false); lastCoins = coins; }
     $('#prog').style.strokeDashoffset = CIRC * (1 - p);
     $('#time').textContent = fmtTime(remain);
-    $('#earn').textContent = s ? `Growing… earns ${short(mins)} when done` : `${mins} min · earns ${short(mins)}`;
+    if (s) {
+      const accrued = Math.min(mins, Math.floor((now - s.start) / MIN_MS));
+      $('#earn').innerHTML = `${short(accrued)} of ${short(mins)}<small>Paid out when the timer hits zero</small>`;
+    } else {
+      $('#earn').innerHTML = `${mins} min · pays ${short(mins)}`;
+    }
     const strict = s ? s.strict !== false : state.strict;
     $('#hint').textContent = s
-      ? (strict ? 'Stay on this page. Leave for more than 10s and your tree withers.' : 'Keep going, your tree is growing.')
-      : 'Plant a tree, then stay on this page while it grows.';
+      ? (strict ? 'Stay on this page. Leave for more than 10s and you forfeit the session.' : 'Keep going. Finish to get paid.')
+      : 'Start a session and stay on this page to get paid.';
     $('#setup').classList.toggle('hidden', !!s);
-    $('#plant').classList.toggle('hidden', !!s);
-    $('#giveup').classList.toggle('hidden', !s);
+    $('#start').classList.toggle('hidden', !!s);
+    $('#quit').classList.toggle('hidden', !s);
     document.querySelectorAll('.tabs button, .chip').forEach(b => b.disabled = !!s && b.dataset.go !== 'focus');
-    document.title = s ? `${fmtTime(remain)} · Sprout` : 'Sprout Focus';
+    document.title = s ? `${fmtTime(remain)} · Banksy` : 'Banksy';
   }
 
-  function plant() {
+  function start() {
     const now = Date.now();
-    session = { species: state.species, minutes: state.duration, start: now, end: now + state.duration * MIN_MS, lastSeen: now, strict: state.strict };
-    saveLocal(); lastStage = null; renderFocus();
+    session = { minutes: state.duration, start: now, end: now + state.duration * MIN_MS, lastSeen: now, strict: state.strict };
+    saveLocal(); lastCoins = null; renderFocus();
   }
 
   function complete() {
     const s = session; if (!s) return;
     session = null;
-    recordTree({ id: uid(), species: s.species, minutes: s.minutes, date: s.end, dead: false }, s.minutes);
-    lastStage = null; renderAll();
-    modal({ art: treeSVG(s.species, 4, false), title: 'Your tree grew!', body: `${fmtMins(s.minutes)} of focus. +${short(s.minutes)} added to your wallet.`,
-      actions: [{ label: 'Nice', cls: 'primary' }] });
+    recordSession({ id: uid(), minutes: s.minutes, date: s.end, dead: false }, s.minutes);
+    lastCoins = null; renderAll();
+    modal({ art: coinStack(10, false), big: '+' + money(s.minutes), title: 'Paid!', body: `${fmtMins(s.minutes)} of focus deposited to your wallet.`,
+      actions: [{ label: 'Collect', cls: 'primary' }] });
   }
 
-  function wither(reason) {
+  function forfeit(reason) {
     const s = session; if (!s) return;
     session = null;
-    recordTree({ id: uid(), species: s.species, minutes: s.minutes, date: Date.now(), dead: true }, 0);
-    lastStage = null; renderAll();
-    modal({ art: treeSVG(s.species, 3, true), title: 'Your tree withered', body: reason + ' No money earned this time.',
+    recordSession({ id: uid(), minutes: s.minutes, date: Date.now(), dead: true }, 0);
+    lastCoins = null; renderAll();
+    modal({ art: coinStack(4, true), title: 'Session forfeited', body: reason + ' Nothing was paid out.',
       actions: [{ label: 'Try again', cls: 'primary' }] });
   }
 
@@ -538,7 +502,7 @@
   function tick() {
     const s = session; if (!s) return;
     const now = Date.now();
-    if (document.visibilityState === 'hidden' && isStrict()) return; // judged on return
+    if (document.visibilityState === 'hidden' && isStrict()) return;
     if (now >= s.end) return complete();
     if (document.visibilityState === 'visible' && now - lastBeat > 2000) { s.lastSeen = now; lastBeat = now; saveLocal(); }
     renderFocus();
@@ -555,64 +519,87 @@
       const now = Date.now();
       if (now - hiddenAt > GRACE_MS) {
         if (s.end <= hiddenAt + GRACE_MS) complete();
-        else wither('You left the page while your tree was growing.');
+        else forfeit('You left the page during the session.');
       }
     }
     hiddenAt = null; tick();
   });
 
-  // Resume / judge a session after a reload or reopened tab
   function reconcile() {
     const s = session; if (!s) return;
     const now = Date.now(), seen = s.lastSeen || s.start;
     if (!isStrict()) { if (now >= s.end) complete(); return; }
     if (now >= s.end && s.end <= seen + GRACE_MS) complete();
-    else if (now - seen > GRACE_MS) wither('You closed or left the page while your tree was growing.');
+    else if (now - seen > GRACE_MS) forfeit('You closed or left the page during the session.');
   }
 
   window.addEventListener('beforeunload', e => { if (session) { e.preventDefault(); e.returnValue = ''; } });
 
-  // ---------- Forest view ----------
-  function renderForest() {
-    const trees = byDate(state.trees);
-    const alive = trees.filter(t => !t.dead);
-    $('#stTrees').textContent = alive.length;
-    $('#stTime').textContent = fmtMins(state.totalMinutes);
-    $('#stDead').textContent = trees.length - alive.length;
-    $('#forestGrid').innerHTML = trees.length
-      ? trees.slice(0, 300).map(t =>
-          `<div class="tile">${treeSVG(t.species, 4, t.dead)}<b>${t.dead ? 'Withered' : fmtMins(t.minutes)}</b>${fmtDate(t.date)}</div>`).join('')
-      : '<div class="empty" style="grid-column:1/-1">No trees yet. Finish a focus session to grow your first one.</div>';
+  // ---------- Wallet: scroll-wheel picker ----------
+  let maxDollars = -1;
+
+  function buildWheel(el, count, fmt, keep) {
+    el.innerHTML = '<div class="pad"></div>' + Array.from({ length: count }, (_, i) => `<div class="it" data-i="${i}">${fmt(i)}</div>`).join('') + '<div class="pad"></div>';
+    el.scrollTop = Math.min(keep, count - 1) * ITEM;
+    markWheel(el);
+  }
+  const wheelIndex = el => Math.round(el.scrollTop / ITEM);
+  function markWheel(el) {
+    const i = wheelIndex(el);
+    el.querySelectorAll('.it').forEach(it => it.classList.toggle('on', +it.dataset.i === i));
+  }
+  function pickedCents() { return wheelIndex($('#wDollars')) * 100 + wheelIndex($('#wCents')); }
+  function setPicker(cents) {
+    $('#wDollars').scrollTop = Math.floor(cents / 100) * ITEM;
+    $('#wCents').scrollTop = (cents % 100) * ITEM;
+    updatePick();
   }
 
-  // ---------- Wallet view ----------
+  function renderWheels() {
+    const md = Math.floor(state.balance / 100);
+    if (md === maxDollars) return;
+    const keepD = maxDollars < 0 ? 0 : wheelIndex($('#wDollars'));
+    maxDollars = md;
+    buildWheel($('#wDollars'), md + 1, i => String(i), keepD);
+    if (!$('#wCents').children.length) buildWheel($('#wCents'), 100, i => String(i).padStart(2, '0'), 0);
+    updatePick();
+  }
+
+  function updatePick() {
+    markWheel($('#wDollars')); markWheel($('#wCents'));
+    const c = pickedCents(), note = $('#pickNote'), btn = $('#redeemBtn');
+    note.classList.remove('err');
+    if (state.balance === 0) { note.textContent = 'Nothing to redeem yet. Finish a session first.'; btn.disabled = true; btn.textContent = 'Redeem'; return; }
+    if (c === 0) { note.textContent = 'Scroll to choose an amount'; btn.disabled = true; btn.textContent = 'Redeem'; return; }
+    if (c > state.balance) { note.textContent = `More than your ${money(state.balance)} balance`; note.classList.add('err'); btn.disabled = true; btn.textContent = 'Redeem'; return; }
+    note.textContent = `Leaves ${money(state.balance - c)}`;
+    btn.disabled = false; btn.textContent = `Redeem ${money(c)}`;
+  }
+
+  ['#wDollars', '#wCents'].forEach(sel => {
+    let t;
+    $(sel).addEventListener('scroll', () => { markWheel($(sel)); clearTimeout(t); t = setTimeout(updatePick, 60); }, { passive: true });
+    $(sel).addEventListener('click', e => { const it = e.target.closest('.it'); if (it) $(sel).scrollTo({ top: +it.dataset.i * ITEM, behavior: 'smooth' }); });
+  });
+
   function renderWallet() {
     $('#chipBal').textContent = money(state.balance);
     $('#walletBal').textContent = money(state.balance);
-    $('#rewards').innerHTML = REWARDS.map((r, i) =>
-      `<div class="row"><div><div class="lbl">${esc(r.label)}</div><div class="sub">${esc(r.sub)}</div></div>
-       <div style="display:flex;align-items:center;gap:10px"><span class="price">${money(r.cents)}</span>
-       <button class="btn primary small" data-r="${i}" ${state.balance < r.cents ? 'disabled' : ''}>Redeem</button></div></div>`).join('');
+    const paid = state.trees.filter(t => !t.dead).length;
+    $('#stEarned').textContent = money(state.totalMinutes);
+    $('#stDone').textContent = paid;
+    $('#stFail').textContent = state.trees.length - paid;
+    renderWheels(); updatePick();
     const hist = byDate(state.redemptions);
     $('#history').innerHTML = hist.length
-      ? hist.slice(0, 50).map(h =>
-          `<div class="row"><div><div class="lbl">${esc(h.label)}</div><div class="sub">${new Date(h.date).toLocaleString()}</div></div><span class="neg">−${money(h.cents)}</span></div>`).join('')
-      : '<div class="empty" style="padding:16px">Nothing redeemed yet.</div>';
-  }
-
-  function redeem(label, cents) {
-    if (!(cents > 0)) return toast('Enter an amount');
-    if (cents > state.balance) return toast('Not enough money yet');
-    modal({ title: `Redeem ${money(cents)}?`, body: `${label}. Your balance will drop to ${money(state.balance - cents)}.`,
-      actions: [
-        { label: 'Cancel', cls: 'ghost' },
-        { label: 'Redeem', cls: 'primary', fn: () => spend(label, cents) },
-      ] });
+      ? hist.slice(0, 50).map(h => `<div class="row"><span class="sub">${new Date(h.date).toLocaleString()}</span><span class="neg num">−${money(h.cents)}</span></div>`).join('')
+      : '<div class="empty">Nothing redeemed yet.</div>';
   }
 
   // ---------- UI helpers ----------
-  function modal({ art = '', title, body, actions }) {
+  function modal({ art = '', big = '', title, body, actions }) {
     $('#mArt').innerHTML = art; $('#mArt').classList.toggle('hidden', !art);
+    $('#mBig').textContent = big; $('#mBig').classList.toggle('hidden', !big);
     $('#mTitle').textContent = title; $('#mBody').textContent = body;
     $('#mActs').innerHTML = '';
     actions.forEach(a => {
@@ -632,43 +619,34 @@
     if (session && view !== 'focus') return;
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
     document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.go === view));
-    if (view === 'forest') renderForest();
-    if (view === 'wallet') renderWallet();
+    if (view === 'wallet') { maxDollars = -1; renderWallet(); } // rebuild wheels once visible so scroll positions apply
   }
-  function renderAll() { renderFocus(); renderForest(); renderWallet(); }
+  function renderAll() { renderFocus(); renderWallet(); }
 
   // ---------- Events ----------
   document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b && !b.disabled) go(b.dataset.go); });
-  $('#species').addEventListener('click', e => {
-    const b = e.target.closest('[data-sp]'); if (!b || session) return;
-    setPref('species', b.dataset.sp); renderSpecies(); renderFocus();
-  });
   $('#dur').addEventListener('input', e => { setPref('duration', +e.target.value); renderFocus(); });
   $('#strict').addEventListener('change', e => setPref('strict', e.target.checked));
-  $('#plant').addEventListener('click', plant);
-  $('#giveup').addEventListener('click', () => modal({
-    title: 'Give up?', body: 'Your tree will wither and you won\'t earn anything for this session.',
-    actions: [{ label: 'Keep going', cls: 'primary' }, { label: 'Give up', cls: 'danger', fn: () => wither('You gave up early.') }],
+  $('#start').addEventListener('click', start);
+  $('#quit').addEventListener('click', () => modal({
+    title: 'Quit this session?', body: 'You\'ll forfeit it and won\'t be paid anything.',
+    actions: [{ label: 'Keep going', cls: 'primary' }, { label: 'Quit', cls: 'danger', fn: () => forfeit('You quit early.') }],
   }));
-  $('#rewards').addEventListener('click', e => {
-    const b = e.target.closest('[data-r]'); if (!b) return;
-    const r = REWARDS[+b.dataset.r]; redeem(r.label, r.cents);
-  });
-  $('#cGo').addEventListener('click', () => {
-    const cents = Math.round(parseFloat($('#cAmt').value) * 100);
-    const label = $('#cLabel').value.trim() || 'Custom reward';
-    redeem(label, cents);
-    if (cents > 0 && cents <= state.balance) { $('#cAmt').value = ''; $('#cLabel').value = ''; }
+  $('#redeemBtn').addEventListener('click', () => {
+    const c = pickedCents();
+    if (!(c > 0) || c > state.balance) return;
+    modal({ title: `Redeem ${money(c)}?`, body: `Your balance will go from ${money(state.balance)} to ${money(state.balance - c)}.`,
+      actions: [{ label: 'Cancel', cls: 'ghost' }, { label: 'Redeem', cls: 'primary', fn: () => spend(c) }] });
   });
   $('#resetBtn').addEventListener('click', () => modal({
     title: 'Reset everything?',
-    body: cloud.user ? 'This clears your balance, forest and history on all your devices.' : 'This clears your balance, forest and history on this device.',
+    body: cloud.user ? 'This clears your balance and history on all your devices.' : 'This clears your balance and history on this device.',
     actions: [{ label: 'Cancel', cls: 'ghost' }, { label: 'Reset', cls: 'danger', fn: resetAll }],
   }));
   $('#syncSignIn').addEventListener('click', signIn);
   $('#acctBtn').addEventListener('click', () => {
     if (!cloud.user) return signIn();
-    modal({ title: cloud.user.displayName || 'Your account', body: `Signed in as ${cloud.user.email}. Your progress syncs across every device you sign in on.`,
+    modal({ title: cloud.user.displayName || 'Your account', body: `Signed in as ${cloud.user.email}. Your money syncs across every device you sign in on.`,
       actions: [{ label: 'Close', cls: 'ghost' }, { label: 'Sign out', cls: 'danger', fn: () => cloud.auth.signOut() }] });
   });
 
