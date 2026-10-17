@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1f17">
+<title>Sprout Focus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='29' y='34' width='6' height='22' rx='2' fill='%238b5a3c'/%3E%3Ccircle cx='32' cy='26' r='18' fill='%235fd38d'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0f1f17; --bg2:#14291f; --card:#1a3628; --line:#28503c;
+    --text:#e9f4ed; --muted:#9dbaa9; --accent:#5fd38d; --accent-d:#3fb370;
+    --gold:#f5c451; --danger:#e57373;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(ellipse at top,#1d3d2d 0%,var(--bg) 60%) fixed;
+    color:var(--text); display:flex; flex-direction:column; min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{font:inherit;color:inherit;cursor:pointer}
+  .hidden{display:none!important}
+
+  /* Header */
+  .top{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;max-width:720px;width:100%;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.15rem;letter-spacing:.3px}
+  .brand svg{width:26px;height:26px}
+  .chip{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;color:var(--gold)}
+  .chip .coin{width:18px;height:18px;border-radius:50%;background:var(--gold);color:#5a4300;font-size:.7rem;display:grid;place-items:center}
+  .debug{font-size:.7rem;background:var(--danger);color:#fff;border-radius:6px;padding:2px 6px;margin-left:6px}
+
+  main{flex:1;width:100%;max-width:720px;margin:0 auto;padding:0 16px 96px}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* Focus */
+  #view-focus{text-align:center}
+  .hint{color:var(--muted);margin:6px 0 14px;min-height:1.3em}
+  .stage{position:relative;width:min(300px,78vw);aspect-ratio:1;margin:0 auto}
+  .ring{position:absolute;inset:0;transform:rotate(-90deg)}
+  .ring circle{fill:none;stroke-width:10}
+  .ring .track{stroke:rgba(255,255,255,.07)}
+  .ring .prog{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .3s linear}
+  .stage .bg{position:absolute;inset:18px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#24503a,#183527)}
+  .tree{position:absolute;inset:18px;display:grid;place-items:center}
+  .tree svg{width:82%;height:82%}
+  .time{font-size:3.4rem;font-weight:300;font-variant-numeric:tabular-nums;margin:14px 0 2px;letter-spacing:1px}
+  .earn{color:var(--gold);font-weight:600;margin-bottom:18px}
+  .species{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .sp{background:var(--card);border:2px solid transparent;border-radius:14px;padding:6px 8px 4px;width:74px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.75rem;color:var(--muted)}
+  .sp svg{width:48px;height:46px}
+  .sp.on{border-color:var(--accent);color:var(--text)}
+  .slider{width:min(360px,100%);margin:0 auto 14px}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .toggle{display:flex;align-items:center;justify-content:center;gap:8px;font-size:.85rem;color:var(--muted);margin-bottom:20px}
+  .toggle input{accent-color:var(--accent);width:18px;height:18px}
+
+  .btn{border:none;border-radius:999px;padding:14px 44px;font-weight:700;font-size:1.05rem;transition:transform .1s,background .2s}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#08351c}
+  .btn.primary:hover{background:#74e0a0}
+  .btn.ghost{background:transparent;border:2px solid var(--line);color:var(--muted)}
+  .btn.danger{background:var(--danger);color:#3b0d0d}
+  .btn.small{padding:8px 18px;font-size:.9rem}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Cards */
+  h2{font-size:1.25rem;margin:8px 0 14px}
+  h3{font-size:1rem;margin:22px 0 10px;color:var(--muted);font-weight:600}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+  .stat b{display:block;font-size:1.35rem}
+  .stat span{font-size:.75rem;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;margin-top:14px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;text-align:center;font-size:.72rem;color:var(--muted)}
+  .tile svg{width:100%;height:70px}
+  .tile b{color:var(--text);display:block;font-size:.8rem}
+  .empty{color:var(--muted);text-align:center;padding:40px 10px}
+
+  .balance{background:linear-gradient(135deg,#2b5a40,#1a3628);border:1px solid var(--line);border-radius:20px;padding:22px;text-align:center}
+  .balance .amt{font-size:2.8rem;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+  .balance small{color:var(--muted)}
+  .list{display:flex;flex-direction:column;gap:8px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .row .lbl{font-weight:600}
+  .row .sub{font-size:.8rem;color:var(--muted)}
+  .price{color:var(--gold);font-weight:700;white-space:nowrap}
+  .custom{display:flex;gap:8px;flex-wrap:wrap}
+  .custom input{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--text);font:inherit}
+  .neg{color:var(--danger);font-weight:700}
+  .reset{margin-top:28px;text-align:center}
+  .link{background:none;border:none;color:var(--muted);text-decoration:underline;font-size:.85rem}
+
+  /* Tabs */
+  .tabs{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:6px;padding:10px 10px calc(10px + env(safe-area-inset-bottom));background:rgba(15,31,23,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+  .tabs button{background:none;border:none;color:var(--muted);padding:8px 22px;border-radius:12px;font-weight:600;font-size:.9rem}
+  .tabs button.active{color:var(--accent);background:var(--card)}
+  .tabs button:disabled{opacity:.35;cursor:not-allowed}
+
+  /* Modal + toast */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:20px;z-index:20}
+  .sheet{background:var(--bg2);border:1px solid var(--line);border-radius:22px;padding:24px;max-width:360px;width:100%;text-align:center;animation:pop .2s ease}
+  @keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+  .sheet .art svg{width:150px;height:140px}
+  .sheet h3{color:var(--text);font-size:1.25rem;margin:8px 0}
+  .sheet p{color:var(--muted);margin:0 0 18px}
+  .sheet .acts{display:flex;gap:10px;justify-content:center}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--line);padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:30;font-weight:600}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 64 64"><rect x="29" y="34" width="6" height="22" rx="2" fill="#8b5a3c"/><circle cx="32" cy="26" r="18" fill="#5fd38d"/></svg>
+    Sprout<span id="debugBadge" class="debug hidden">DEBUG</span>
+  </div>
+  <button class="chip" data-go="wallet" aria-label="Wallet"><span class="coin">$</span><span id="chipBal">$0.00</span></button>
+</header>
+
+<main>
+  <!-- FOCUS -->
+  <section id="view-focus" class="view active">
+    <p class="hint" id="hint">Plant a tree, then stay on this page while it grows.</p>
+    <div class="stage">
+      <div class="bg"></div>
+      <svg class="ring" viewBox="0 0 300 300"><circle class="track" cx="150" cy="150" r="140"/><circle id="prog" class="prog" cx="150" cy="150" r="140"/></svg>
+      <div class="tree" id="tree"></div>
+    </div>
+    <div class="time" id="time">25:00</div>
+    <div class="earn" id="earn"></div>
+
+    <div id="setup">
+      <div class="species" id="species"></div>
+      <div class="slider"><input type="range" id="dur" min="5" max="120" step="5" value="25" aria-label="Focus duration in minutes"></div>
+      <label class="toggle"><input type="checkbox" id="strict" checked> Strict mode: leaving this tab for 10s+ withers the tree</label>
+    </div>
+
+    <button class="btn primary" id="plant">Plant</button>
+    <button class="btn ghost hidden" id="giveup">Give up</button>
+  </section>
+
+  <!-- FOREST -->
+  <section id="view-forest" class="view">
+    <h2>Your forest</h2>
+    <div class="stats">
+      <div class="stat"><b id="stTrees">0</b><span>Trees grown</span></div>
+      <div class="stat"><b id="stTime">0m</b><span>Focused</span></div>
+      <div class="stat"><b id="stDead">0</b><span>Withered</span></div>
+    </div>
+    <div class="grid" id="forestGrid"></div>
+  </section>
+
+  <!-- WALLET -->
+  <section id="view-wallet" class="view">
+    <div class="balance">
+      <small>Balance</small>
+      <div class="amt" id="walletBal">$0.00</div>
+      <small>Every minute of completed focus earns 1¢</small>
+    </div>
+
+    <h3>Redeem a reward</h3>
+    <div class="list" id="rewards"></div>
+
+    <h3>Custom redeem</h3>
+    <div class="custom">
+      <input id="cLabel" placeholder="What for? (optional)" maxlength="40">
+      <input id="cAmt" type="number" min="0.01" step="0.01" placeholder="Amount ($)">
+      <button class="btn primary small" id="cGo">Redeem</button>
+    </div>
+
+    <h3>History</h3>
+    <div class="list" id="history"></div>
+
+    <div class="reset"><button class="link" id="resetBtn">Reset all data</button></div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-go="focus" class="active">Focus</button>
+  <button data-go="forest">Forest</button>
+  <button data-go="wallet">Wallet</button>
+</nav>
+
+<div class="modal hidden" id="modal">
+  <div class="sheet">
+    <div class="art" id="mArt"></div>
+    <h3 id="mTitle"></h3>
+    <p id="mBody"></p>
+    <div class="acts" id="mActs"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // ---------- Config ----------
+  const KEY = 'sprout-focus-v1';
+  const DEBUG = new URLSearchParams(location.search).has('debug'); // ?debug => 1 "minute" = 1 second
+  const MIN_MS = DEBUG ? 1000 : 60000;
+  const GRACE_MS = 10000;
+  const CIRC = 2 * Math.PI * 140;
+
+  const SPECIES = {
+    oak:    { name: 'Oak',     leaf: '#5cbf60', leaf2: '#3e9a48', shape: 'round' },
+    pine:   { name: 'Pine',    leaf: '#2f8a62', leaf2: '#1f6849', shape: 'cone'  },
+    cherry: { name: 'Blossom', leaf: '#f6a1c0', leaf2: '#e9739d', shape: 'round' },
+    maple:  { name: 'Maple',   leaf: '#ff9446', leaf2: '#e36a2b', shape: 'round' },
+  };
+
+  const REWARDS = [
+    { label: '15-minute break',   sub: 'Step away guilt-free', cents: 25 },
+    { label: 'Snack',             sub: 'Treat yourself',       cents: 75 },
+    { label: 'One episode',       sub: 'Of whatever you\'re watching', cents: 100 },
+    { label: 'Hour of gaming',    sub: 'You earned it',        cents: 200 },
+    { label: 'Night off',         sub: 'No studying tonight',  cents: 500 },
+  ];
+
+  // ---------- State ----------
+  const $ = s => document.querySelector(s);
+  const defaults = () => ({ balance: 0, totalMinutes: 0, trees: [], redemptions: [], session: null, species: 'oak', duration: 25, strict: true });
+  let state = load();
+  let hiddenAt = null, lastStage = null, lastSp = null, lastBeat = 0;
+
+  function load() {
+    try { const raw = localStorage.getItem(KEY); if (raw) return Object.assign(defaults(), JSON.parse(raw)); } catch (e) {}
+    return defaults();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  const money = c => (c / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const short = c => (c < 100 ? c + '¢' : money(c));
+  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const fmtTime = ms => {
+    const t = Math.ceil(ms / 1000), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(s).padStart(2, '0');
+  };
+  const fmtMins = m => (m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm');
+  const fmtDate = d => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+  // ---------- Tree art ----------
+  function treeSVG(sp, stage, dead) {
+    const s = SPECIES[sp] || SPECIES.oak;
+    const leaf = dead ? '#8a7a66' : s.leaf, leaf2 = dead ? '#6b5c4b' : s.leaf2, trunk = dead ? '#5b4636' : '#8b5a3c';
+    let g = '<ellipse cx="100" cy="172" rx="62" ry="13" fill="#5a4230"/><ellipse cx="100" cy="168" rx="55" ry="9" fill="#7a5c42"/>';
+    let t = '';
+    if (stage === 0) {
+      t = '<ellipse cx="100" cy="163" rx="9" ry="6" fill="#a7814f"/>';
+    } else if (stage === 1) {
+      t = `<path d="M100 166 Q99 150 100 138" stroke="${dead ? trunk : '#6fae4a'}" stroke-width="4" fill="none" stroke-linecap="round"/>
+           <ellipse cx="88" cy="140" rx="12" ry="6" fill="${leaf}" transform="rotate(-25 88 140)"/>
+           <ellipse cx="112" cy="136" rx="12" ry="6" fill="${leaf2}" transform="rotate(25 112 136)"/>`;
+    } else {
+      const h = [0, 0, 44, 66, 84][stage], w = [0, 0, 5, 8, 11][stage], r = [0, 0, 24, 34, 44][stage];
+      const top = 166 - h;
+      t = `<rect x="${100 - w / 2}" y="${top}" width="${w}" height="${h + 2}" rx="${w / 3}" fill="${trunk}"/>`;
+      if (s.shape === 'cone') {
+        const tiers = stage + 0;
+        for (let i = 0; i < tiers; i++) {
+          const y = top + 10 - i * (r * 0.55), hw = r * (1.05 - i * 0.18);
+          t += `<polygon points="${100 - hw},${y + r * 0.45} ${100 + hw},${y + r * 0.45} 100,${y - r * 0.75}" fill="${i % 2 ? leaf2 : leaf}"/>`;
+        }
+      } else {
+        t += `<circle cx="${100 - r * 0.62}" cy="${top + r * 0.15}" r="${r * 0.68}" fill="${leaf2}"/>
+              <circle cx="${100 + r * 0.62}" cy="${top + r * 0.15}" r="${r * 0.68}" fill="${leaf2}"/>
+              <circle cx="100" cy="${top - r * 0.35}" r="${r}" fill="${leaf}"/>`;
+        if (sp === 'cherry' && !dead && stage >= 3) {
+          [[-18, -30], [14, -42], [24, -12], [-26, -6], [2, -18]].forEach(([dx, dy]) =>
+            t += `<circle cx="${100 + dx * r / 44}" cy="${top + dy * r / 44}" r="3" fill="#fff0f5"/>`);
+        }
+      }
+    }
+    if (dead) t = `<g transform="rotate(7 100 166)">${t}</g>`;
+    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg">${g}${t}</svg>`;
+  }
+  const stageFor = p => (p >= 1 ? 4 : p < 0.15 ? 1 : p < 0.5 ? 2 : 3);
+
+  // ---------- Focus view ----------
+  function renderSpecies() {
+    $('#species').innerHTML = Object.entries(SPECIES).map(([k, s]) =>
+      `<button class="sp ${k === state.species ? 'on' : ''}" data-sp="${k}" aria-label="${s.name}">${treeSVG(k, 4, false)}<span>${s.name}</span></button>`
+    ).join('');
+  }
+
+  function renderFocus() {
+    const s = state.session, now = Date.now();
+    let p = 0, remain = state.duration * MIN_MS, sp = state.species, mins = state.duration;
+    if (s) { p = Math.min(1, (now - s.start) / (s.end - s.start)); remain = Math.max(0, s.end - now); sp = s.species; mins = s.minutes; }
+    const stage = s ? stageFor(p) : 3;
+    if (stage !== lastStage || sp !== lastSp) { $('#tree').innerHTML = treeSVG(sp, stage, false); lastStage = stage; lastSp = sp; }
+    $('#prog').style.strokeDashoffset = CIRC * (1 - p);
+    $('#time').textContent = fmtTime(remain);
+    $('#earn').textContent = s ? `Growing… earns ${short(mins)} when done` : `${mins} min · earns ${short(mins)}`;
+    $('#hint').textContent = s
+      ? (state.strict ? 'Stay on this page. Leave for more than 10s and your tree withers.' : 'Keep going, your tree is growing.')
+      : 'Plant a tree, then stay on this page while it grows.';
+    $('#setup').classList.toggle('hidden', !!s);
+    $('#plant').classList.toggle('hidden', !!s);
+    $('#giveup').classList.toggle('hidden', !s);
+    document.querySelectorAll('.tabs button, .chip').forEach(b => b.disabled = !!s && b.dataset.go !== 'focus');
+    document.title = s ? `${fmtTime(remain)} · Sprout` : 'Sprout Focus';
+  }
+
+  function plant() {
+    const now = Date.now();
+    state.session = { species: state.species, minutes: state.duration, start: now, end: now + state.duration * MIN_MS, lastSeen: now };
+    save(); lastStage = null; renderFocus();
+  }
+
+  function complete() {
+    const s = state.session; if (!s) return;
+    state.session = null;
+    state.balance += s.minutes;
+    state.totalMinutes += s.minutes;
+    state.trees.unshift({ species: s.species, minutes: s.minutes, date: s.end, dead: false });
+    save(); lastStage = null; renderAll();
+    modal({ art: treeSVG(s.species, 4, false), title: 'Your tree grew!', body: `${fmtMins(s.minutes)} of focus. +${short(s.minutes)} added to your wallet.`,
+      actions: [{ label: 'Nice', cls: 'primary' }] });
+  }
+
+  function wither(reason) {
+    const s = state.session; if (!s) return;
+    state.session = null;
+    state.trees.unshift({ species: s.species, minutes: s.minutes, date: Date.now(), dead: true });
+    save(); lastStage = null; renderAll();
+    modal({ art: treeSVG(s.species, 3, true), title: 'Your tree withered', body: reason + ' No money earned this time.',
+      actions: [{ label: 'Try again', cls: 'primary' }] });
+  }
+
+  function tick() {
+    const s = state.session; if (!s) return;
+    const now = Date.now();
+    if (document.visibilityState === 'hidden' && state.strict) return; // judged on return
+    if (now >= s.end) return complete();
+    if (document.visibilityState === 'visible' && now - lastBeat > 2000) { s.lastSeen = now; lastBeat = now; save(); }
+    renderFocus();
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    const s = state.session;
+    if (document.visibilityState === 'hidden') {
+      hiddenAt = Date.now();
+      if (s) { s.lastSeen = hiddenAt; save(); }
+      return;
+    }
+    if (s && state.strict && hiddenAt) {
+      const now = Date.now();
+      if (now - hiddenAt > GRACE_MS) {
+        if (s.end <= hiddenAt + GRACE_MS) complete();
+        else wither('You left the page while your tree was growing.');
+      }
+    }
+    hiddenAt = null; tick();
+  });
+
+  // Resume / judge a session after a reload or reopened tab
+  function reconcile() {
+    const s = state.session; if (!s) return;
+    const now = Date.now(), seen = s.lastSeen || s.start;
+    if (!state.strict) { if (now >= s.end) complete(); return; }
+    if (now >= s.end && s.end <= seen + GRACE_MS) complete();
+    else if (now - seen > GRACE_MS) wither('You closed or left the page while your tree was growing.');
+  }
+
+  window.addEventListener('beforeunload', e => { if (state.session) { e.preventDefault(); e.returnValue = ''; } });
+
+  // ---------- Forest view ----------
+  function renderForest() {
+    const alive = state.trees.filter(t => !t.dead);
+    $('#stTrees').textContent = alive.length;
+    $('#stTime').textContent = fmtMins(state.totalMinutes);
+    $('#stDead').textContent = state.trees.length - alive.length;
+    $('#forestGrid').innerHTML = state.trees.length
+      ? state.trees.slice(0, 300).map(t =>
+          `<div class="tile">${treeSVG(t.species, 4, t.dead)}<b>${t.dead ? 'Withered' : fmtMins(t.minutes)}</b>${fmtDate(t.date)}</div>`).join('')
+      : '<div class="empty" style="grid-column:1/-1">No trees yet. Finish a focus session to grow your first one.</div>';
+  }
+
+  // ---------- Wallet view ----------
+  function renderWallet() {
+    $('#chipBal').textContent = money(state.balance);
+    $('#walletBal').textContent = money(state.balance);
+    $('#rewards').innerHTML = REWARDS.map((r, i) =>
+      `<div class="row"><div><div class="lbl">${esc(r.label)}</div><div class="sub">${esc(r.sub)}</div></div>
+       <div style="display:flex;align-items:center;gap:10px"><span class="price">${money(r.cents)}</span>
+       <button class="btn primary small" data-r="${i}" ${state.balance < r.cents ? 'disabled' : ''}>Redeem</button></div></div>`).join('');
+    $('#history').innerHTML = state.redemptions.length
+      ? state.redemptions.slice(0, 50).map(h =>
+          `<div class="row"><div><div class="lbl">${esc(h.label)}</div><div class="sub">${new Date(h.date).toLocaleString()}</div></div><span class="neg">−${money(h.cents)}</span></div>`).join('')
+      : '<div class="empty" style="padding:16px">Nothing redeemed yet.</div>';
+  }
+
+  function redeem(label, cents) {
+    if (!(cents > 0)) return toast('Enter an amount');
+    if (cents > state.balance) return toast('Not enough money yet');
+    modal({ title: `Redeem ${money(cents)}?`, body: `${label}. Your balance will drop to ${money(state.balance - cents)}.`,
+      actions: [
+        { label: 'Cancel', cls: 'ghost' },
+        { label: 'Redeem', cls: 'primary', fn: () => {
+            state.balance -= cents;
+            state.redemptions.unshift({ label, cents, date: Date.now() });
+            save(); renderWallet(); toast(`Redeemed: ${label}`);
+        } },
+      ] });
+  }
+
+  // ---------- UI helpers ----------
+  function modal({ art = '', title, body, actions }) {
+    $('#mArt').innerHTML = art; $('#mArt').classList.toggle('hidden', !art);
+    $('#mTitle').textContent = title; $('#mBody').textContent = body;
+    $('#mActs').innerHTML = '';
+    actions.forEach(a => {
+      const b = document.createElement('button');
+      b.className = 'btn small ' + a.cls; b.textContent = a.label;
+      b.onclick = () => { $('#modal').classList.add('hidden'); a.fn && a.fn(); };
+      $('#mActs').appendChild(b);
+    });
+    $('#modal').classList.remove('hidden');
+  }
+  let toastT;
+  function toast(msg) {
+    const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+  function go(view) {
+    if (state.session && view !== 'focus') return;
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.go === view));
+    if (view === 'forest') renderForest();
+    if (view === 'wallet') renderWallet();
+  }
+  function renderAll() { renderFocus(); renderForest(); renderWallet(); }
+
+  // ---------- Events ----------
+  document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b && !b.disabled) go(b.dataset.go); });
+  $('#species').addEventListener('click', e => {
+    const b = e.target.closest('[data-sp]'); if (!b || state.session) return;
+    state.species = b.dataset.sp; save(); renderSpecies(); renderFocus();
+  });
+  $('#dur').addEventListener('input', e => { state.duration = +e.target.value; save(); renderFocus(); });
+  $('#strict').addEventListener('change', e => { state.strict = e.target.checked; save(); });
+  $('#plant').addEventListener('click', plant);
+  $('#giveup').addEventListener('click', () => modal({
+    title: 'Give up?', body: 'Your tree will wither and you won\'t earn anything for this session.',
+    actions: [{ label: 'Keep going', cls: 'primary' }, { label: 'Give up', cls: 'danger', fn: () => wither('You gave up early.') }],
+  }));
+  $('#rewards').addEventListener('click', e => {
+    const b = e.target.closest('[data-r]'); if (!b) return;
+    const r = REWARDS[+b.dataset.r]; redeem(r.label, r.cents);
+  });
+  $('#cGo').addEventListener('click', () => {
+    const cents = Math.round(parseFloat($('#cAmt').value) * 100);
+    const label = $('#cLabel').value.trim() || 'Custom reward';
+    redeem(label, cents);
+    if (cents > 0 && cents <= state.balance) { $('#cAmt').value = ''; $('#cLabel').value = ''; }
+  });
+  $('#resetBtn').addEventListener('click', () => modal({
+    title: 'Reset everything?', body: 'This clears your balance, forest and history on this device.',
+    actions: [{ label: 'Cancel', cls: 'ghost' }, { label: 'Reset', cls: 'danger', fn: () => { state = defaults(); save(); init(); toast('Data reset'); } }],
+  }));
+
+  // ---------- Init ----------
+  function init() {
+    $('#prog').style.strokeDasharray = CIRC;
+    $('#dur').value = state.duration;
+    $('#strict').checked = state.strict;
+    $('#debugBadge').classList.toggle('hidden', !DEBUG);
+    lastStage = null;
+    renderSpecies(); renderAll(); go('focus');
+  }
+  init();
+  reconcile();
+  setInterval(tick, 250);
+})();
+</script>
+</body>
+</html>
