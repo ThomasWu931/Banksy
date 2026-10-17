@@ -110,7 +110,22 @@
   .sheet .acts{display:flex;gap:10px;justify-content:center}
   .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--line);padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:30;font-weight:600}
   .toast.show{opacity:1;transform:translateX(-50%)}
+
+  /* Account + sync */
+  .right{display:flex;align-items:center;gap:8px}
+  .acct{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600;font-size:.85rem;color:var(--text)}
+  .acct.avatar{padding:0;width:34px;height:34px;overflow:hidden;display:grid;place-items:center;background:var(--accent);color:#08351c;font-weight:800}
+  .acct.avatar img{width:100%;height:100%;object-fit:cover}
+  .sync{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:.85rem;color:var(--muted)}
+  .sync .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:8px}
+  .sync .dot.ok{background:var(--accent)}
+  .sync .dot.busy{background:var(--gold)}
+  .sync .dot.err{background:var(--danger)}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 </head>
 <body>
 
@@ -119,7 +134,10 @@
     <svg viewBox="0 0 64 64"><rect x="29" y="34" width="6" height="22" rx="2" fill="#8b5a3c"/><circle cx="32" cy="26" r="18" fill="#5fd38d"/></svg>
     Sprout<span id="debugBadge" class="debug hidden">DEBUG</span>
   </div>
-  <button class="chip" data-go="wallet" aria-label="Wallet"><span class="coin">$</span><span id="chipBal">$0.00</span></button>
+  <div class="right">
+    <button class="chip" data-go="wallet" aria-label="Wallet"><span class="coin">$</span><span id="chipBal">$0.00</span></button>
+    <button class="acct hidden" id="acctBtn">Sign in</button>
+  </div>
 </header>
 
 <main>
@@ -162,6 +180,7 @@
       <div class="amt" id="walletBal">$0.00</div>
       <small>Every minute of completed focus earns 1¢</small>
     </div>
+    <div class="sync" id="syncBox"><span><span class="dot" id="syncDot"></span><span id="syncText">Saved on this device only</span></span><button class="btn primary small hidden" id="syncSignIn">Sign in</button></div>
 
     <h3>Redeem a reward</h3>
     <div class="list" id="rewards"></div>
@@ -199,7 +218,8 @@
 <script>
 (() => {
   // ---------- Config ----------
-  const KEY = 'sprout-focus-v1';
+  const KEY = 'sprout-focus-v1';          // guest (signed-out) progress
+  const SESSION_KEY = 'sprout-session-v1'; // the running timer, always per-device
   const DEBUG = new URLSearchParams(location.search).has('debug'); // ?debug => 1 "minute" = 1 second
   const MIN_MS = DEBUG ? 1000 : 60000;
   const GRACE_MS = 10000;
@@ -220,18 +240,9 @@
     { label: 'Night off',         sub: 'No studying tonight',  cents: 500 },
   ];
 
-  // ---------- State ----------
+  // ---------- Helpers ----------
   const $ = s => document.querySelector(s);
-  const defaults = () => ({ balance: 0, totalMinutes: 0, trees: [], redemptions: [], session: null, species: 'oak', duration: 25, strict: true });
-  let state = load();
-  let hiddenAt = null, lastStage = null, lastSp = null, lastBeat = 0;
-
-  function load() {
-    try { const raw = localStorage.getItem(KEY); if (raw) return Object.assign(defaults(), JSON.parse(raw)); } catch (e) {}
-    return defaults();
-  }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
-
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const money = c => (c / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   const short = c => (c < 100 ? c + '¢' : money(c));
   const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -241,6 +252,193 @@
   };
   const fmtMins = m => (m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm');
   const fmtDate = d => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const byDate = arr => arr.slice().sort((a, b) => b.date - a.date);
+
+  // ---------- State ----------
+  const defaults = () => ({ balance: 0, totalMinutes: 0, trees: [], redemptions: [], species: 'oak', duration: 25, strict: true });
+  const pick = d => ({
+    balance: Number(d.balance) || 0,
+    totalMinutes: Number(d.totalMinutes) || 0,
+    trees: Array.isArray(d.trees) ? d.trees : [],
+    redemptions: Array.isArray(d.redemptions) ? d.redemptions : [],
+    species: SPECIES[d.species] ? d.species : 'oak',
+    duration: Number(d.duration) || 25,
+    strict: d.strict !== false,
+  });
+
+  function readJSON(k) { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+  function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  function loadGuest() {
+    const raw = readJSON(KEY) || {};
+    const g = pick(raw);
+    g.trees.forEach(t => { if (!t.id) t.id = uid(); });
+    g.redemptions.forEach(r => { if (!r.id) r.id = uid(); });
+    return g;
+  }
+  function loadSession() {
+    const s = readJSON(SESSION_KEY);
+    if (s) return s;
+    const old = readJSON(KEY); // migrate from the first version, which stored the session inside the main state
+    return old && old.session ? old.session : null;
+  }
+
+  let state = loadGuest();
+  let session = loadSession();
+  let hiddenAt = null, lastStage = null, lastSp = null, lastBeat = 0;
+
+  function saveLocal() {
+    writeJSON(SESSION_KEY, session);
+    if (!cloud.ref) writeJSON(KEY, state); // when signed in, the cloud holds progress
+  }
+
+  // ---------- Cloud sync (Firebase) ----------
+  const cloud = { enabled: false, auth: null, db: null, FV: null, user: null, ref: null, unsub: null, status: 'local' };
+
+  function initCloud() {
+    const cfg = window.FIREBASE_CONFIG;
+    if (!cfg || typeof firebase === 'undefined') { renderAccount(); return; }
+    try {
+      firebase.initializeApp(cfg);
+      cloud.auth = firebase.auth();
+      cloud.db = firebase.firestore();
+      cloud.FV = firebase.firestore.FieldValue;
+      cloud.db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+      cloud.enabled = true;
+      cloud.auth.getRedirectResult().catch(e => console.warn(e));
+      cloud.auth.onAuthStateChanged(onUser);
+    } catch (e) { console.error('Firebase init failed', e); }
+    renderAccount();
+  }
+
+  async function onUser(user) {
+    if (cloud.unsub) { cloud.unsub(); cloud.unsub = null; }
+    cloud.user = user || null;
+    cloud.ref = null;
+    if (!user) { state = loadGuest(); cloud.status = 'local'; syncControls(); renderAll(); renderAccount(); return; }
+
+    cloud.ref = cloud.db.collection('users').doc(user.uid);
+    setStatus('busy');
+    try { await mergeGuest(); } catch (e) { console.error(e); toast('Could not reach the cloud. Will retry when online.'); }
+    if (!cloud.ref) return; // signed out while merging
+    cloud.unsub = cloud.ref.onSnapshot({ includeMetadataChanges: true }, snap => {
+      state = pick(snap.data() || {});
+      setStatus(snap.metadata.hasPendingWrites ? 'busy' : 'ok');
+      syncControls(); renderAll();
+    }, err => { console.error(err); setStatus('err'); });
+  }
+
+  // Move any progress earned while signed out on this device into the account.
+  async function mergeGuest() {
+    const g = loadGuest();
+    const hasData = g.balance > 0 || g.trees.length > 0 || g.redemptions.length > 0;
+    const FV = cloud.FV, ref = cloud.ref;
+    await cloud.db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        tx.set(ref, Object.assign(pick(g), { createdAt: FV.serverTimestamp() }));
+      } else if (hasData) {
+        const u = { balance: FV.increment(g.balance), totalMinutes: FV.increment(g.totalMinutes) };
+        if (g.trees.length) u.trees = FV.arrayUnion(...g.trees);
+        if (g.redemptions.length) u.redemptions = FV.arrayUnion(...g.redemptions);
+        tx.set(ref, u, { merge: true });
+      }
+    });
+    if (hasData) {
+      writeJSON(KEY, Object.assign(defaults(), { species: g.species, duration: g.duration, strict: g.strict }));
+      toast(`Moved ${money(g.balance)} and ${g.trees.length} tree${g.trees.length === 1 ? '' : 's'} from this device into your account`);
+    }
+  }
+
+  function cloudWrite(update) {
+    if (!cloud.ref) return;
+    cloud.ref.set(update, { merge: true }).catch(e => { console.error(e); setStatus('err'); });
+  }
+
+  function signIn() {
+    if (!cloud.enabled) return;
+    const p = new firebase.auth.GoogleAuthProvider();
+    cloud.auth.signInWithPopup(p).catch(e => {
+      if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment'].includes(e.code)) cloud.auth.signInWithRedirect(p);
+      else if (!['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e.code)) toast('Sign-in failed: ' + (e.code || e.message));
+    });
+  }
+
+  function setStatus(s) { cloud.status = s; renderAccount(); }
+
+  function renderAccount() {
+    const btn = $('#acctBtn');
+    btn.classList.toggle('hidden', !cloud.enabled);
+    if (cloud.user) {
+      const u = cloud.user;
+      btn.className = 'acct avatar';
+      btn.innerHTML = u.photoURL ? `<img src="${esc(u.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc((u.displayName || u.email || '?')[0].toUpperCase());
+      btn.setAttribute('aria-label', 'Account');
+    } else {
+      btn.className = 'acct' + (cloud.enabled ? '' : ' hidden');
+      btn.textContent = 'Sign in';
+    }
+    const dot = $('#syncDot'), text = $('#syncText');
+    dot.className = 'dot';
+    $('#syncSignIn').classList.toggle('hidden', !cloud.enabled || !!cloud.user);
+    if (!cloud.enabled) text.textContent = 'Saved on this device only';
+    else if (!cloud.user) text.textContent = 'Saved on this device only. Sign in to sync across devices.';
+    else {
+      const who = cloud.user.email || 'your account';
+      const map = { ok: ['ok', `Synced to ${who}`], busy: ['busy', 'Syncing…'], err: ['err', 'Sync problem, changes will retry'] };
+      const [cls, msg] = map[cloud.status] || map.ok;
+      dot.classList.add(cls); text.textContent = msg;
+    }
+  }
+
+  // ---------- Mutations (local first, then cloud) ----------
+  function recordTree(tree, earned) {
+    state.trees.unshift(tree);
+    if (earned) { state.balance += earned; state.totalMinutes += earned; }
+    saveLocal();
+    if (cloud.ref) {
+      const FV = cloud.FV, u = { trees: FV.arrayUnion(tree) };
+      if (earned) { u.balance = FV.increment(earned); u.totalMinutes = FV.increment(earned); }
+      cloudWrite(u);
+    }
+  }
+
+  let prefTimer;
+  function setPref(k, v) {
+    state[k] = v; saveLocal();
+    clearTimeout(prefTimer);
+    prefTimer = setTimeout(() => cloudWrite({ [k]: v }), 400);
+  }
+
+  async function spend(label, cents) {
+    const entry = { id: uid(), label, cents, date: Date.now() };
+    if (!cloud.ref) {
+      if (cents > state.balance) return toast('Not enough money yet');
+      state.balance -= cents; state.redemptions.unshift(entry); saveLocal(); renderWallet();
+      return toast(`Redeemed: ${label}`);
+    }
+    const ref = cloud.ref, FV = cloud.FV;
+    try {
+      await cloud.db.runTransaction(async tx => {
+        const snap = await tx.get(ref);
+        const bal = Number((snap.data() || {}).balance) || 0;
+        if (bal < cents) throw new Error('INSUFFICIENT');
+        tx.set(ref, { balance: bal - cents, redemptions: FV.arrayUnion(entry) }, { merge: true });
+      });
+      toast(`Redeemed: ${label}`);
+    } catch (e) {
+      toast(e.message === 'INSUFFICIENT' ? 'Not enough money yet' : 'Could not redeem. Are you online?');
+    }
+  }
+
+  function resetAll() {
+    const keep = { species: state.species, duration: state.duration, strict: state.strict };
+    state = Object.assign(defaults(), keep);
+    session = null;
+    saveLocal();
+    if (cloud.ref) cloud.ref.set(Object.assign(defaults(), keep, { createdAt: cloud.FV.serverTimestamp() })).catch(console.error);
+    lastStage = null; renderAll(); toast('Data reset');
+  }
 
   // ---------- Tree art ----------
   function treeSVG(sp, stage, dead) {
@@ -259,8 +457,7 @@
       const top = 166 - h;
       t = `<rect x="${100 - w / 2}" y="${top}" width="${w}" height="${h + 2}" rx="${w / 3}" fill="${trunk}"/>`;
       if (s.shape === 'cone') {
-        const tiers = stage + 0;
-        for (let i = 0; i < tiers; i++) {
+        for (let i = 0; i < stage; i++) {
           const y = top + 10 - i * (r * 0.55), hw = r * (1.05 - i * 0.18);
           t += `<polygon points="${100 - hw},${y + r * 0.45} ${100 + hw},${y + r * 0.45} 100,${y - r * 0.75}" fill="${i % 2 ? leaf2 : leaf}"/>`;
         }
@@ -286,8 +483,14 @@
     ).join('');
   }
 
+  function syncControls() {
+    $('#dur').value = state.duration;
+    $('#strict').checked = state.strict;
+    renderSpecies();
+  }
+
   function renderFocus() {
-    const s = state.session, now = Date.now();
+    const s = session, now = Date.now();
     let p = 0, remain = state.duration * MIN_MS, sp = state.species, mins = state.duration;
     if (s) { p = Math.min(1, (now - s.start) / (s.end - s.start)); remain = Math.max(0, s.end - now); sp = s.species; mins = s.minutes; }
     const stage = s ? stageFor(p) : 3;
@@ -295,8 +498,9 @@
     $('#prog').style.strokeDashoffset = CIRC * (1 - p);
     $('#time').textContent = fmtTime(remain);
     $('#earn').textContent = s ? `Growing… earns ${short(mins)} when done` : `${mins} min · earns ${short(mins)}`;
+    const strict = s ? s.strict !== false : state.strict;
     $('#hint').textContent = s
-      ? (state.strict ? 'Stay on this page. Leave for more than 10s and your tree withers.' : 'Keep going, your tree is growing.')
+      ? (strict ? 'Stay on this page. Leave for more than 10s and your tree withers.' : 'Keep going, your tree is growing.')
       : 'Plant a tree, then stay on this page while it grows.';
     $('#setup').classList.toggle('hidden', !!s);
     $('#plant').classList.toggle('hidden', !!s);
@@ -307,47 +511,47 @@
 
   function plant() {
     const now = Date.now();
-    state.session = { species: state.species, minutes: state.duration, start: now, end: now + state.duration * MIN_MS, lastSeen: now };
-    save(); lastStage = null; renderFocus();
+    session = { species: state.species, minutes: state.duration, start: now, end: now + state.duration * MIN_MS, lastSeen: now, strict: state.strict };
+    saveLocal(); lastStage = null; renderFocus();
   }
 
   function complete() {
-    const s = state.session; if (!s) return;
-    state.session = null;
-    state.balance += s.minutes;
-    state.totalMinutes += s.minutes;
-    state.trees.unshift({ species: s.species, minutes: s.minutes, date: s.end, dead: false });
-    save(); lastStage = null; renderAll();
+    const s = session; if (!s) return;
+    session = null;
+    recordTree({ id: uid(), species: s.species, minutes: s.minutes, date: s.end, dead: false }, s.minutes);
+    lastStage = null; renderAll();
     modal({ art: treeSVG(s.species, 4, false), title: 'Your tree grew!', body: `${fmtMins(s.minutes)} of focus. +${short(s.minutes)} added to your wallet.`,
       actions: [{ label: 'Nice', cls: 'primary' }] });
   }
 
   function wither(reason) {
-    const s = state.session; if (!s) return;
-    state.session = null;
-    state.trees.unshift({ species: s.species, minutes: s.minutes, date: Date.now(), dead: true });
-    save(); lastStage = null; renderAll();
+    const s = session; if (!s) return;
+    session = null;
+    recordTree({ id: uid(), species: s.species, minutes: s.minutes, date: Date.now(), dead: true }, 0);
+    lastStage = null; renderAll();
     modal({ art: treeSVG(s.species, 3, true), title: 'Your tree withered', body: reason + ' No money earned this time.',
       actions: [{ label: 'Try again', cls: 'primary' }] });
   }
 
+  const isStrict = () => (session ? session.strict !== false : state.strict);
+
   function tick() {
-    const s = state.session; if (!s) return;
+    const s = session; if (!s) return;
     const now = Date.now();
-    if (document.visibilityState === 'hidden' && state.strict) return; // judged on return
+    if (document.visibilityState === 'hidden' && isStrict()) return; // judged on return
     if (now >= s.end) return complete();
-    if (document.visibilityState === 'visible' && now - lastBeat > 2000) { s.lastSeen = now; lastBeat = now; save(); }
+    if (document.visibilityState === 'visible' && now - lastBeat > 2000) { s.lastSeen = now; lastBeat = now; saveLocal(); }
     renderFocus();
   }
 
   document.addEventListener('visibilitychange', () => {
-    const s = state.session;
+    const s = session;
     if (document.visibilityState === 'hidden') {
       hiddenAt = Date.now();
-      if (s) { s.lastSeen = hiddenAt; save(); }
+      if (s) { s.lastSeen = hiddenAt; saveLocal(); }
       return;
     }
-    if (s && state.strict && hiddenAt) {
+    if (s && isStrict() && hiddenAt) {
       const now = Date.now();
       if (now - hiddenAt > GRACE_MS) {
         if (s.end <= hiddenAt + GRACE_MS) complete();
@@ -359,23 +563,24 @@
 
   // Resume / judge a session after a reload or reopened tab
   function reconcile() {
-    const s = state.session; if (!s) return;
+    const s = session; if (!s) return;
     const now = Date.now(), seen = s.lastSeen || s.start;
-    if (!state.strict) { if (now >= s.end) complete(); return; }
+    if (!isStrict()) { if (now >= s.end) complete(); return; }
     if (now >= s.end && s.end <= seen + GRACE_MS) complete();
     else if (now - seen > GRACE_MS) wither('You closed or left the page while your tree was growing.');
   }
 
-  window.addEventListener('beforeunload', e => { if (state.session) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if (session) { e.preventDefault(); e.returnValue = ''; } });
 
   // ---------- Forest view ----------
   function renderForest() {
-    const alive = state.trees.filter(t => !t.dead);
+    const trees = byDate(state.trees);
+    const alive = trees.filter(t => !t.dead);
     $('#stTrees').textContent = alive.length;
     $('#stTime').textContent = fmtMins(state.totalMinutes);
-    $('#stDead').textContent = state.trees.length - alive.length;
-    $('#forestGrid').innerHTML = state.trees.length
-      ? state.trees.slice(0, 300).map(t =>
+    $('#stDead').textContent = trees.length - alive.length;
+    $('#forestGrid').innerHTML = trees.length
+      ? trees.slice(0, 300).map(t =>
           `<div class="tile">${treeSVG(t.species, 4, t.dead)}<b>${t.dead ? 'Withered' : fmtMins(t.minutes)}</b>${fmtDate(t.date)}</div>`).join('')
       : '<div class="empty" style="grid-column:1/-1">No trees yet. Finish a focus session to grow your first one.</div>';
   }
@@ -388,8 +593,9 @@
       `<div class="row"><div><div class="lbl">${esc(r.label)}</div><div class="sub">${esc(r.sub)}</div></div>
        <div style="display:flex;align-items:center;gap:10px"><span class="price">${money(r.cents)}</span>
        <button class="btn primary small" data-r="${i}" ${state.balance < r.cents ? 'disabled' : ''}>Redeem</button></div></div>`).join('');
-    $('#history').innerHTML = state.redemptions.length
-      ? state.redemptions.slice(0, 50).map(h =>
+    const hist = byDate(state.redemptions);
+    $('#history').innerHTML = hist.length
+      ? hist.slice(0, 50).map(h =>
           `<div class="row"><div><div class="lbl">${esc(h.label)}</div><div class="sub">${new Date(h.date).toLocaleString()}</div></div><span class="neg">−${money(h.cents)}</span></div>`).join('')
       : '<div class="empty" style="padding:16px">Nothing redeemed yet.</div>';
   }
@@ -400,11 +606,7 @@
     modal({ title: `Redeem ${money(cents)}?`, body: `${label}. Your balance will drop to ${money(state.balance - cents)}.`,
       actions: [
         { label: 'Cancel', cls: 'ghost' },
-        { label: 'Redeem', cls: 'primary', fn: () => {
-            state.balance -= cents;
-            state.redemptions.unshift({ label, cents, date: Date.now() });
-            save(); renderWallet(); toast(`Redeemed: ${label}`);
-        } },
+        { label: 'Redeem', cls: 'primary', fn: () => spend(label, cents) },
       ] });
   }
 
@@ -424,10 +626,10 @@
   let toastT;
   function toast(msg) {
     const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200);
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
   }
   function go(view) {
-    if (state.session && view !== 'focus') return;
+    if (session && view !== 'focus') return;
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
     document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.go === view));
     if (view === 'forest') renderForest();
@@ -438,11 +640,11 @@
   // ---------- Events ----------
   document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b && !b.disabled) go(b.dataset.go); });
   $('#species').addEventListener('click', e => {
-    const b = e.target.closest('[data-sp]'); if (!b || state.session) return;
-    state.species = b.dataset.sp; save(); renderSpecies(); renderFocus();
+    const b = e.target.closest('[data-sp]'); if (!b || session) return;
+    setPref('species', b.dataset.sp); renderSpecies(); renderFocus();
   });
-  $('#dur').addEventListener('input', e => { state.duration = +e.target.value; save(); renderFocus(); });
-  $('#strict').addEventListener('change', e => { state.strict = e.target.checked; save(); });
+  $('#dur').addEventListener('input', e => { setPref('duration', +e.target.value); renderFocus(); });
+  $('#strict').addEventListener('change', e => setPref('strict', e.target.checked));
   $('#plant').addEventListener('click', plant);
   $('#giveup').addEventListener('click', () => modal({
     title: 'Give up?', body: 'Your tree will wither and you won\'t earn anything for this session.',
@@ -459,21 +661,23 @@
     if (cents > 0 && cents <= state.balance) { $('#cAmt').value = ''; $('#cLabel').value = ''; }
   });
   $('#resetBtn').addEventListener('click', () => modal({
-    title: 'Reset everything?', body: 'This clears your balance, forest and history on this device.',
-    actions: [{ label: 'Cancel', cls: 'ghost' }, { label: 'Reset', cls: 'danger', fn: () => { state = defaults(); save(); init(); toast('Data reset'); } }],
+    title: 'Reset everything?',
+    body: cloud.user ? 'This clears your balance, forest and history on all your devices.' : 'This clears your balance, forest and history on this device.',
+    actions: [{ label: 'Cancel', cls: 'ghost' }, { label: 'Reset', cls: 'danger', fn: resetAll }],
   }));
+  $('#syncSignIn').addEventListener('click', signIn);
+  $('#acctBtn').addEventListener('click', () => {
+    if (!cloud.user) return signIn();
+    modal({ title: cloud.user.displayName || 'Your account', body: `Signed in as ${cloud.user.email}. Your progress syncs across every device you sign in on.`,
+      actions: [{ label: 'Close', cls: 'ghost' }, { label: 'Sign out', cls: 'danger', fn: () => cloud.auth.signOut() }] });
+  });
 
   // ---------- Init ----------
-  function init() {
-    $('#prog').style.strokeDasharray = CIRC;
-    $('#dur').value = state.duration;
-    $('#strict').checked = state.strict;
-    $('#debugBadge').classList.toggle('hidden', !DEBUG);
-    lastStage = null;
-    renderSpecies(); renderAll(); go('focus');
-  }
-  init();
+  $('#prog').style.strokeDasharray = CIRC;
+  $('#debugBadge').classList.toggle('hidden', !DEBUG);
+  syncControls(); renderAll(); go('focus');
   reconcile();
+  initCloud();
   setInterval(tick, 250);
 })();
 </script>
