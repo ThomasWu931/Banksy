@@ -7,14 +7,14 @@ A focus timer that pays you. Start a session, stay on the page until the timer h
 - **Strict mode**: leave the tab for more than 10 seconds and the session is forfeited (no pay)
 - Quit early → forfeited, nothing paid
 - Wallet: balance, stats, and a scroll-wheel picker to redeem any amount up to your balance, plus redemption history
-- Sign in with Google to sync your money across every device and browser (Firebase)
-- Works signed out too: money is saved on that device and moved into your account the first time you sign in
+- One shared wallet, no login: the same balance on every device and browser (Firebase Firestore, doc `wallet/global`)
+- Anyone with the link can earn or spend from that wallet
 
 ## Deploy to GitHub Pages
 Settings → Pages → Deploy from a branch → `main` / `(root)`. Live at `https://thomaswu931.github.io/Banksy/`.
 
 ## Cloud sync (Firebase)
-Already connected to the `banksy-1ea2f` Firebase project via `firebase-config.js`. Firestore rules are in `firestore.rules` (each account can only read and write its own document). Google sign-in only works on domains listed under Firebase → Authentication → Settings → Authorized domains.
+Connected to the `banksy-1ea2f` Firebase project via `firebase-config.js`. All money lives in one Firestore document, `wallet/global`. The rules in `firestore.rules` allow anyone to read and update only that document, and block a negative balance.
 
 ## Testing quickly
 Add `?debug` to the URL to make each "minute" last one second. Money earned in debug mode counts toward your real balance.
