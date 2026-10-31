@@ -31,15 +31,17 @@
   header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:14px 16px 0;flex-wrap:wrap}
   .name{font-family:var(--mono);font-weight:500;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
   .name b{color:var(--ink);font-weight:700}
-  .pb{display:flex;gap:18px;font-family:var(--mono);font-size:.72rem;color:var(--dim);font-variant-numeric:tabular-nums}
-  .pb span b{color:var(--ink);font-weight:500;margin-left:6px}
+  .pb{display:flex;gap:6px 18px;flex-wrap:wrap;font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);font-variant-numeric:tabular-nums}
+  .pb span{display:grid;gap:2px;white-space:nowrap}
+  .pb span b{color:var(--ink);font-weight:500;font-size:.8rem;letter-spacing:0;text-transform:none}
 
   #stage{flex:1;position:relative;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;outline:none;transition:background .12s}
   #stage.early{background:#1d1214}
   .center{display:grid;place-items:center;gap:18px;text-align:center;padding:0 16px}
   .lamp{width:84px;height:84px;display:grid;place-items:center;position:relative;transform:translateX(clamp(36px,9vw,80px))}
-  .dot{width:26px;height:26px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 6px rgba(255,90,78,.18),0 0 28px rgba(255,90,78,.65);opacity:0;transform:scale(.4)}
-  .go .dot{opacity:1;transform:none}
+  .dot{width:26px;height:26px;border-radius:50%;visibility:hidden}
+  .dot img{display:block;width:26px;height:26px}
+  .go .dot{visibility:visible;box-shadow:0 0 0 6px rgba(255,90,78,.18),0 0 28px rgba(255,90,78,.65)}
   .ring{position:absolute;width:26px;height:26px;border-radius:50%;border:2px solid var(--signal);opacity:0}
   .go .ring{animation:ping .9s ease-out infinite}
   @keyframes ping{from{opacity:.7;transform:scale(1)}to{opacity:0;transform:scale(3.2)}}
@@ -53,6 +55,7 @@
   .verdict.v-good{color:var(--ink)}
   .verdict.v-slow{color:var(--warn);border-color:rgba(242,180,90,.4)}
   .verdict.v-early{color:var(--signal);border-color:rgba(255,90,78,.45)}
+  .prec{font-family:var(--mono);font-size:.66rem;color:var(--dim);letter-spacing:.04em;font-variant-numeric:tabular-nums;min-height:1.2em;text-align:center}
   .pips{display:flex;gap:8px}
   .pip{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--dim)}
   .pip.done{background:var(--ink);border-color:var(--ink)}
@@ -61,14 +64,22 @@
   .strip{background:var(--panel);border-top:1px solid var(--line);padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:grid;gap:8px}
   .strip-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--mono);font-size:.68rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
   .strip-head button{background:none;border:none;color:var(--dim);font:inherit;text-decoration:underline;text-underline-offset:3px;padding:0;text-transform:uppercase;letter-spacing:.08em}
-  .scale{position:relative;height:46px;border-bottom:1px solid var(--line)}
-  .band{position:absolute;top:0;bottom:0;background:rgba(233,230,223,.05);border-left:1px dashed var(--line);border-right:1px dashed var(--line)}
-  .band span{position:absolute;top:2px;left:6px;font-family:var(--mono);font-size:.6rem;color:var(--dim);white-space:nowrap}
-  .tick{position:absolute;bottom:-18px;transform:translateX(-50%);font-family:var(--mono);font-size:.6rem;color:var(--dim);font-variant-numeric:tabular-nums}
-  .mark{position:absolute;bottom:0;width:2px;transform:translateX(-50%);background:var(--ink);border-radius:2px 2px 0 0;transition:height .3s}
-  .mark.last{background:var(--signal);width:3px}
-  .mark.old{opacity:.35}
-  .axis-pad{height:14px}
+  .modes{display:flex;gap:6px;padding:12px 16px 0;flex-wrap:wrap}
+  .modes button{flex:1;min-width:72px;display:grid;gap:2px;background:transparent;border:1px solid var(--line);border-radius:10px;padding:7px 8px;font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+  .modes button small{font-size:.6rem;letter-spacing:.02em;text-transform:none;font-weight:300}
+  .modes button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--panel)}
+  .modes button:disabled{opacity:.4;cursor:not-allowed}
+  /* Histogram: 25 ms bins from 100–600 ms plus an overflow bin, human-typical band shaded */
+  .hist{position:relative;height:84px;display:flex;align-items:flex-end;gap:2px;border-bottom:1px solid var(--line)}
+  .hist .band{position:absolute;top:0;bottom:0;background:rgba(233,230,223,.05);border-left:1px dashed var(--line);border-right:1px dashed var(--line);pointer-events:none}
+  .hist .band span{position:absolute;top:2px;left:6px;font-family:var(--mono);font-size:.6rem;color:var(--dim);white-space:nowrap}
+  .hist .ymax{position:absolute;top:0;right:0;font-family:var(--mono);font-size:.6rem;color:var(--dim)}
+  .bar{flex:1;min-height:0;background:var(--ink);opacity:.75;border-radius:2px 2px 0 0;position:relative;z-index:1}
+  .bar.zero{background:transparent}
+  .bar.over{background:var(--warn)}
+  .bar.last{background:var(--signal);opacity:1}
+  .axis{position:relative;height:14px}
+  .tick{position:absolute;top:2px;transform:translateX(-50%);font-family:var(--mono);font-size:.6rem;color:var(--dim);font-variant-numeric:tabular-nums}
   @media (prefers-reduced-motion:reduce){.go .ring{animation:none}#stage{transition:none}}
 </style>
 </head>
@@ -77,45 +88,111 @@
   <div class="name"><b>Reaction</b> tester</div>
   <div class="pb" aria-live="polite">
     <span>Best<b id="best">—</b></span>
-    <span>Avg of 5<b id="avg5">—</b></span>
+    <span>Median<b id="med">—</b></span>
+    <span>Avg last 5<b id="avg5">—</b></span>
     <span>Too soon<b id="early">0</b></span>
+    <span>Display<b id="hz">—</b></span>
   </div>
 </header>
+<nav class="modes" id="modes" aria-label="Wait before the dot appears">
+  <button type="button" data-mode="short">Short<small>0.8–1.6 s</small></button>
+  <button type="button" data-mode="medium">Medium<small>1.5–3 s</small></button>
+  <button type="button" data-mode="long">Long<small>3–6 s</small></button>
+  <button type="button" data-mode="random">Random<small>0.5–8 s</small></button>
+</nav>
 
 <main id="stage" tabindex="0" aria-label="Reaction area. Tap, click or press Space.">
   <div class="center">
     <div class="lamp" id="lamp">
       <div class="ring"></div>
-      <div class="dot"></div>
+      <div class="dot" id="dot"></div>
     </div>
     <div class="readout" id="readout">243<small>ms</small></div>
     <div class="verdict" id="verdict">Example</div>
+    <div class="prec" id="prec"></div>
     <div class="msg" id="msg"><strong>Tap anywhere to start.</strong> Wait for the red dot, then tap as fast as you can.</div>
     <div class="pips" id="pips" aria-label="Round progress"></div>
   </div>
 </main>
 
 <section class="strip" aria-label="Recent attempts">
-  <div class="strip-head"><span id="stripLabel">Recent attempts · ms</span><button id="clear" type="button">Clear history</button></div>
-  <div class="scale" id="scale"></div>
-  <div class="axis-pad"></div>
+  <div class="strip-head"><span id="stripLabel">Histogram · ms</span><button id="clear" type="button">Clear history</button></div>
+  <div class="hist" id="hist"></div>
+  <div class="axis" id="axis"></div>
 </section>
 
 <script>
 (() => {
-  const MIN_DELAY = 1200, MAX_DELAY = 4200, ROUND = 5, LO = 100, HI = 600;
+  const ROUND = 5, LO = 100, HI = 600, BIN = 25;
+  const MODES = { short: [800, 1600], medium: [1500, 3000], long: [3000, 6000], random: [500, 8000] };
+  const MODE_NAME = { short: 'Short', medium: 'Medium', long: 'Long', random: 'Random' };
+  const ANTICIPATION_MS = 100;   // faster than this is a guess, not a reaction (standard cut-off)
   const KEY = 'reaction-tester-v1';
   const $ = s => document.querySelector(s);
-  const stage = $('#stage'), lamp = $('#lamp');
+  const stage = $('#stage'), lamp = $('#lamp'), dotBox = $('#dot');
 
   // ---- persisted per-viewer history (best effort) ----
-  let saved = { best: null, history: [], early: 0 };
+  let saved = { history: [], early: 0, mode: 'medium' };
   try { const r = localStorage.getItem(KEY); if (r) saved = Object.assign(saved, JSON.parse(r)); } catch (e) {}
+  // Older saves stored bare numbers (all from a 1.2–4.2 s wait, closest to Medium).
+  saved.history = saved.history.map(h => typeof h === 'number' ? { ms: h, mode: 'medium' } : h);
+  if (!MODES[saved.mode]) saved.mode = 'medium';
+  const modeHist = () => saved.history.filter(h => h.mode === saved.mode).map(h => h.ms);
   const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {} };
 
   let phase = 'idle';        // idle | waiting | go | result | early | summary
-  let timer = null, shownAt = 0, round = [];
+  let timer = null, round = [];
 
+  // ---------- Timing ----------
+  // Stimulus onset, best source first:
+  //  1. Element Timing: the browser reports when the dot image was actually painted (Chrome, Edge).
+  //  2. Otherwise the vsync after the frame that drew the dot (double requestAnimationFrame).
+  // Response: the pointer/key event's own timestamp from the OS input event, not when our code ran.
+  // All on the same high-resolution clock as performance.now().
+  let trial = 0, frameOnset = null, paintOnset = null, onsetFrameStart = null;
+  const etSupported = typeof PerformanceObserver !== 'undefined' && 'PerformanceElementTiming' in window;
+  if (etSupported) {
+    try {
+      new PerformanceObserver(list => {
+        for (const e of list.getEntries()) {
+          if (e.identifier === 'dot-' + trial && e.renderTime > 0) paintOnset = e.renderTime;
+        }
+      }).observe({ type: 'element', buffered: false });
+    } catch (e) {}
+  }
+
+  // Display refresh: measured continuously from frame intervals; keeping a frame loop running
+  // while waiting also stops the browser idling the render pipeline, which adds latency to the first frame.
+  const intervals = [];
+  let lastFrame = 0, frameLoop = 0;
+  function sampleFrames(t) {
+    if (lastFrame) { const d = t - lastFrame; if (d > 2 && d < 60) { intervals.push(d); if (intervals.length > 120) intervals.shift(); } }
+    lastFrame = t;
+    frameLoop = requestAnimationFrame(sampleFrames);
+  }
+  const frameMs = () => {
+    if (intervals.length < 10) return 1000 / 60;
+    const s = intervals.slice().sort((a, b) => a - b); return s[Math.floor(s.length / 2)];
+  };
+  function startFrames() { if (!frameLoop) { lastFrame = 0; frameLoop = requestAnimationFrame(sampleFrames); } }
+
+  // Pre-decoded dot image, so showing it is a paint, not a decode.
+  const DOT_SRC = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26"><circle cx="13" cy="13" r="13" fill="#ff5a4e"/></svg>');
+  let nextDot = null;
+  function prepareDot() {
+    const img = new Image(26, 26);
+    img.alt = ''; img.decoding = 'sync'; img.src = DOT_SRC;
+    nextDot = img;
+    if (img.decode) img.decode().catch(() => {});
+  }
+
+  function onsetTime() {
+    // Prefer the browser's paint time when it is plausible for this frame.
+    if (paintOnset != null && onsetFrameStart != null && paintOnset >= onsetFrameStart && paintOnset - onsetFrameStart < 100) return [paintOnset, 'paint'];
+    return frameOnset == null ? [null, ''] : [frameOnset, 'frame'];
+  }
+
+  // ---------- Rounds ----------
   function verdictFor(ms) {
     if (ms < 180) return ['Elite', 'v-elite'];
     if (ms < 230) return ['Sharp', 'v-good'];
@@ -127,57 +204,93 @@
   function setReadout(ms) { $('#readout').innerHTML = ms == null ? '&nbsp;' : `${ms}<small>ms</small>`; }
   function setVerdict(text, cls) { const v = $('#verdict'); v.textContent = text || ''; v.className = 'verdict ' + (cls || ''); v.style.visibility = text ? 'visible' : 'hidden'; }
   function setMsg(html) { $('#msg').innerHTML = html; }
+  function setPrec(text) { $('#prec').textContent = text || ''; }
 
   function renderPips() {
     $('#pips').innerHTML = Array.from({ length: ROUND }, (_, i) => `<span class="pip ${i < round.length ? 'done' : ''}"></span>`).join('');
   }
+  const median = a => { const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2); };
   function renderStats() {
-    $('#best').textContent = saved.best ? saved.best + ' ms' : '—';
-    const last5 = saved.history.slice(-5);
+    const h = modeHist();
+    $('#best').textContent = h.length ? Math.min(...h) + ' ms' : '—';
+    $('#med').textContent = h.length ? median(h) + ' ms' : '—';
+    const last5 = h.slice(-5);
     $('#avg5').textContent = last5.length === 5 ? avg(last5) + ' ms' : '—';
     $('#early').textContent = saved.early;
+    $('#hz').textContent = Math.round(1000 / frameMs()) + ' Hz';
   }
-  function renderStrip() {
-    const sc = $('#scale'), x = v => ((Math.min(HI, Math.max(LO, v)) - LO) / (HI - LO)) * 100;
-    let h = `<div class="band" style="left:${x(200)}%;width:${x(270) - x(200)}%"><span>typical 200–270</span></div>`;
-    for (let t = LO; t <= HI; t += 100) h += `<span class="tick" style="left:${x(t)}%">${t}</span>`;
-    const recent = saved.history.slice(-20);
-    recent.forEach((v, i) => {
-      const last = i === recent.length - 1, old = i < recent.length - ROUND;
-      h += `<span class="mark ${last ? 'last' : ''} ${old ? 'old' : ''}" style="left:${x(v)}%;height:${last ? 100 : 62}%" title="${v} ms"></span>`;
+  function renderHist() {
+    const h = modeHist(), nb = (HI - LO) / BIN, counts = new Array(nb + 1).fill(0);
+    const binOf = v => v >= HI ? nb : Math.max(0, Math.floor((v - LO) / BIN));
+    h.forEach(v => counts[binOf(v)]++);
+    const max = Math.max(1, ...counts), lastBin = h.length ? binOf(h[h.length - 1]) : -1;
+    const x = v => ((v - LO) / (HI - LO)) * (nb / (nb + 1)) * 100; // overflow bin takes the last slot
+    let out = `<div class="band" style="left:${x(200)}%;width:${x(270) - x(200)}%"><span>typical 200–270</span></div><span class="ymax">${h.length ? max : ''}</span>`;
+    counts.forEach((c, i) => {
+      const range = i === nb ? `${HI}+ ms` : `${LO + i * BIN}–${LO + (i + 1) * BIN - 1} ms`;
+      out += `<div class="bar ${c ? '' : 'zero'} ${i === lastBin ? 'last' : ''} ${i === nb && c ? 'over' : ''}" style="height:${(c / max) * 100}%" title="${range}: ${c}"></div>`;
     });
-    sc.innerHTML = h;
-    $('#stripLabel').textContent = recent.length ? `Last ${recent.length} attempts · ms` : 'Recent attempts · ms (none yet)';
+    $('#hist').innerHTML = out;
+    let ax = '';
+    for (let t = LO; t <= HI; t += 100) ax += `<span class="tick" style="left:${x(t)}%">${t}</span>`;
+    $('#axis').innerHTML = ax;
+    $('#stripLabel').textContent = h.length ? `${MODE_NAME[saved.mode]} · ${h.length} attempt${h.length === 1 ? '' : 's'} · 25 ms bins` : `${MODE_NAME[saved.mode]} · no attempts yet`;
   }
 
-  function setPhase(p) { phase = p; stage.className = p === 'early' ? 'early' : ''; lamp.className = 'lamp ' + (p === 'waiting' ? 'waiting' : p === 'go' ? 'go' : ''); }
+  function renderModes() {
+    document.querySelectorAll('#modes button').forEach(b => {
+      b.setAttribute('aria-pressed', b.dataset.mode === saved.mode ? 'true' : 'false');
+      b.disabled = phase === 'waiting' || phase === 'go';
+    });
+  }
+
+  function setPhase(p) {
+    phase = p;
+    stage.className = p === 'early' ? 'early' : '';
+    lamp.className = 'lamp ' + (p === 'go' ? 'go' : '');
+    if (p !== 'go') dotBox.replaceChildren();
+    renderModes();
+  }
 
   function arm() {
     clearTimeout(timer);
     if (round.length >= ROUND) round = [];
+    trial += 1; frameOnset = null; paintOnset = null; onsetFrameStart = null;
+    prepareDot(); startFrames();
     setPhase('waiting');
-    setReadout(null); setVerdict('');
+    setReadout(null); setVerdict(''); setPrec('');
     setMsg('Wait for the red dot…');
     renderPips();
+    const id = trial;
     timer = setTimeout(() => {
-      setPhase('go');
-      setMsg('<strong>Tap!</strong>');
-      // Time from the frame the dot is drawn in.
-      requestAnimationFrame(t => { shownAt = t; });
-      shownAt = performance.now();
-    }, MIN_DELAY + Math.random() * (MAX_DELAY - MIN_DELAY));
+      // Change the DOM at the start of a frame so the dot lands in exactly that frame.
+      requestAnimationFrame(t1 => {
+        if (phase !== 'waiting' || id !== trial) return;
+        nextDot.setAttribute('elementtiming', 'dot-' + id);
+        dotBox.replaceChildren(nextDot);
+        setPhase('go');
+        onsetFrameStart = t1;
+        // The next vsync is when the frame drawn at t1 reaches the screen.
+        requestAnimationFrame(t2 => { if (id === trial) frameOnset = t2; });
+      });
+    }, (([a, b]) => a + Math.random() * (b - a))(MODES[saved.mode]));
   }
 
   function hit(stamp) {
-    const ms = Math.max(0, Math.round(stamp - shownAt));
+    const [onset, src] = onsetTime();
+    const raw = onset == null ? 0 : stamp - onset;
+    if (onset == null || raw < ANTICIPATION_MS) return tooSoon(true);
+    const ms = Math.round(raw);
     round.push(ms);
-    saved.history.push(ms); if (saved.history.length > 200) saved.history.shift();
-    const newBest = !saved.best || ms < saved.best;
-    if (newBest) saved.best = ms;
+    const prior = modeHist();
+    const newBest = !prior.length || ms < Math.min(...prior);
+    saved.history.push({ ms, mode: saved.mode }); if (saved.history.length > 2000) saved.history.shift();
     persist();
     setReadout(ms);
     const [vt, vc] = verdictFor(ms); setVerdict(newBest ? 'New best' : vt, newBest ? 'v-elite' : vc);
-    renderPips(); renderStats(); renderStrip();
+    const hz = Math.round(1000 / frameMs()), err = src === 'paint' ? 1 : Math.max(1, Math.round(frameMs() / 2));
+    setPrec(`${raw.toFixed(1)} ms raw · ±${err} ms · ${hz} Hz · ${src === 'paint' ? 'paint-timed' : 'frame-timed'}`);
+    renderPips(); renderStats(); renderHist();
     if (round.length >= ROUND) {
       setPhase('summary');
       const a = avg(round), b = Math.min(...round);
@@ -188,36 +301,51 @@
     }
   }
 
-  function tooSoon() {
+  function tooSoon(anticipated) {
     clearTimeout(timer);
     saved.early += 1; persist();
     setPhase('early');
-    setReadout(null); setVerdict('Too soon', 'v-early');
-    setMsg('You tapped before the dot appeared. That one doesn\'t count. Tap to try again.');
+    setReadout(null); setVerdict('Too soon', 'v-early'); setPrec('');
+    setMsg(anticipated
+      ? `Under ${ANTICIPATION_MS} ms is faster than a human can react, so that was a guess. It doesn't count. Tap to try again.`
+      : 'You tapped before the dot appeared. That one doesn\'t count. Tap to try again.');
     renderStats();
   }
 
   function press(stamp) {
-    if (phase === 'waiting') return tooSoon();
+    if (phase === 'waiting') return tooSoon(false);
     if (phase === 'go') return hit(stamp);
     arm(); // idle, result, early, summary
   }
 
-  // pointerdown fires earlier than click; event.timeStamp shares performance.now()'s clock.
-  stage.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); press(e.timeStamp || performance.now()); });
+  // pointerdown fires on first contact (earlier than click/touchend); event.timeStamp is the input event's own time.
+  const stampOf = e => (e.timeStamp > 0 && e.timeStamp < performance.now() + 1000 ? e.timeStamp : performance.now());
+  stage.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); press(stampOf(e)); });
   window.addEventListener('keydown', e => {
-    if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); press(e.timeStamp || performance.now()); }
+    if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); press(stampOf(e)); }
   });
   stage.addEventListener('contextmenu', e => e.preventDefault());
 
+  $('#modes').addEventListener('click', e => {
+    const b = e.target.closest('button[data-mode]'); if (!b || b.disabled) return;
+    if (b.dataset.mode === saved.mode) return;
+    saved.mode = b.dataset.mode; round = []; persist();
+    setPhase('idle'); setReadout(null); setVerdict(''); setPrec('');
+    setMsg(`<strong>${MODE_NAME[saved.mode]} mode.</strong> Tap anywhere to start.`);
+    renderPips(); renderStats(); renderHist();
+  });
   $('#clear').addEventListener('click', () => {
-    saved = { best: null, history: [], early: 0 }; round = []; persist();
-    renderStats(); renderStrip(); renderPips();
+    saved = { history: [], early: 0, mode: saved.mode }; round = []; persist();
+    renderStats(); renderHist(); renderPips();
   });
 
-  // Opening state: show an example readout until the first tap.
-  renderPips(); renderStats(); renderStrip();
-  if (saved.history.length) { setReadout(saved.history[saved.history.length - 1]); setVerdict('Last time', ''); }
+  // Opening state
+  startFrames();
+  setTimeout(renderStats, 1500); // refresh-rate reading once measured
+  renderPips(); renderStats(); renderHist();
+  renderModes();
+  const prev = modeHist();
+  if (prev.length) { setReadout(prev[prev.length - 1]); setVerdict('Last time', ''); }
 })();
 </script>
 </body>
