@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reaction Tester</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300;500;700&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* One dark instrument panel; the whole screen is the button. Big mono readout, one coral signal lamp. */
+  :root{
+    --field:#101218;      /* stage background */
+    --panel:#171a22;      /* strip + cards */
+    --line:#262a35;
+    --ink:#e9e6df;        /* warm off-white text */
+    --dim:#8b8f9c;
+    --signal:#ff5a4e;     /* the dot */
+    --good:#7fd1b9; --warn:#f2b45a;
+    --mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--field);color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden;
+    -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  button{font:inherit;color:inherit;cursor:pointer}
+  button:focus-visible,#stage:focus-visible{outline:2px solid var(--signal);outline-offset:-4px}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:14px 16px 0;flex-wrap:wrap}
+  .name{font-family:var(--mono);font-weight:500;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .name b{color:var(--ink);font-weight:700}
+  .pb{display:flex;gap:18px;font-family:var(--mono);font-size:.72rem;color:var(--dim);font-variant-numeric:tabular-nums}
+  .pb span b{color:var(--ink);font-weight:500;margin-left:6px}
+
+  #stage{flex:1;position:relative;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;outline:none;transition:background .12s}
+  #stage.early{background:#1d1214}
+  .center{display:grid;place-items:center;gap:18px;text-align:center;padding:0 16px}
+  .lamp{width:84px;height:84px;display:grid;place-items:center;position:relative;transform:translateX(clamp(36px,9vw,80px))}
+  .dot{width:26px;height:26px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 6px rgba(255,90,78,.18),0 0 28px rgba(255,90,78,.65);opacity:0;transform:scale(.4)}
+  .go .dot{opacity:1;transform:none}
+  .ring{position:absolute;width:26px;height:26px;border-radius:50%;border:2px solid var(--signal);opacity:0}
+  .go .ring{animation:ping .9s ease-out infinite}
+  @keyframes ping{from{opacity:.7;transform:scale(1)}to{opacity:0;transform:scale(3.2)}}
+
+  .readout{font-family:var(--mono);font-weight:300;font-size:clamp(3.2rem,15vw,6.5rem);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em;min-height:1em}
+  .readout small{font-size:.32em;font-weight:500;color:var(--dim);margin-left:.2em;letter-spacing:.06em}
+  .msg{font-size:1.05rem;color:var(--dim);max-width:30ch;text-wrap:balance;min-height:1.4em}
+  .msg strong{color:var(--ink);font-weight:600}
+  .verdict{font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+  .verdict.v-elite{color:var(--good);border-color:rgba(127,209,185,.4)}
+  .verdict.v-good{color:var(--ink)}
+  .verdict.v-slow{color:var(--warn);border-color:rgba(242,180,90,.4)}
+  .verdict.v-early{color:var(--signal);border-color:rgba(255,90,78,.45)}
+  .pips{display:flex;gap:8px}
+  .pip{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--dim)}
+  .pip.done{background:var(--ink);border-color:var(--ink)}
+
+  /* Strip chart: last attempts on a fixed 100–600 ms scale with the human-average band */
+  .strip{background:var(--panel);border-top:1px solid var(--line);padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:grid;gap:8px}
+  .strip-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--mono);font-size:.68rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+  .strip-head button{background:none;border:none;color:var(--dim);font:inherit;text-decoration:underline;text-underline-offset:3px;padding:0;text-transform:uppercase;letter-spacing:.08em}
+  .scale{position:relative;height:46px;border-bottom:1px solid var(--line)}
+  .band{position:absolute;top:0;bottom:0;background:rgba(233,230,223,.05);border-left:1px dashed var(--line);border-right:1px dashed var(--line)}
+  .band span{position:absolute;top:2px;left:6px;font-family:var(--mono);font-size:.6rem;color:var(--dim);white-space:nowrap}
+  .tick{position:absolute;bottom:-18px;transform:translateX(-50%);font-family:var(--mono);font-size:.6rem;color:var(--dim);font-variant-numeric:tabular-nums}
+  .mark{position:absolute;bottom:0;width:2px;transform:translateX(-50%);background:var(--ink);border-radius:2px 2px 0 0;transition:height .3s}
+  .mark.last{background:var(--signal);width:3px}
+  .mark.old{opacity:.35}
+  .axis-pad{height:14px}
+  @media (prefers-reduced-motion:reduce){.go .ring{animation:none}#stage{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="name"><b>Reaction</b> tester</div>
+  <div class="pb" aria-live="polite">
+    <span>Best<b id="best">—</b></span>
+    <span>Avg of 5<b id="avg5">—</b></span>
+    <span>Too soon<b id="early">0</b></span>
+  </div>
+</header>
+
+<main id="stage" tabindex="0" aria-label="Reaction area. Tap, click or press Space.">
+  <div class="center">
+    <div class="lamp" id="lamp">
+      <div class="ring"></div>
+      <div class="dot"></div>
+    </div>
+    <div class="readout" id="readout">243<small>ms</small></div>
+    <div class="verdict" id="verdict">Example</div>
+    <div class="msg" id="msg"><strong>Tap anywhere to start.</strong> Wait for the red dot, then tap as fast as you can.</div>
+    <div class="pips" id="pips" aria-label="Round progress"></div>
+  </div>
+</main>
+
+<section class="strip" aria-label="Recent attempts">
+  <div class="strip-head"><span id="stripLabel">Recent attempts · ms</span><button id="clear" type="button">Clear history</button></div>
+  <div class="scale" id="scale"></div>
+  <div class="axis-pad"></div>
+</section>
+
+<script>
+(() => {
+  const MIN_DELAY = 1200, MAX_DELAY = 4200, ROUND = 5, LO = 100, HI = 600;
+  const KEY = 'reaction-tester-v1';
+  const $ = s => document.querySelector(s);
+  const stage = $('#stage'), lamp = $('#lamp');
+
+  // ---- persisted per-viewer history (best effort) ----
+  let saved = { best: null, history: [], early: 0 };
+  try { const r = localStorage.getItem(KEY); if (r) saved = Object.assign(saved, JSON.parse(r)); } catch (e) {}
+  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {} };
+
+  let phase = 'idle';        // idle | waiting | go | result | early | summary
+  let timer = null, shownAt = 0, round = [];
+
+  function verdictFor(ms) {
+    if (ms < 180) return ['Elite', 'v-elite'];
+    if (ms < 230) return ['Sharp', 'v-good'];
+    if (ms < 300) return ['Average', 'v-good'];
+    return ['Slow', 'v-slow'];
+  }
+  const avg = a => Math.round(a.reduce((x, y) => x + y, 0) / a.length);
+
+  function setReadout(ms) { $('#readout').innerHTML = ms == null ? '&nbsp;' : `${ms}<small>ms</small>`; }
+  function setVerdict(text, cls) { const v = $('#verdict'); v.textContent = text || ''; v.className = 'verdict ' + (cls || ''); v.style.visibility = text ? 'visible' : 'hidden'; }
+  function setMsg(html) { $('#msg').innerHTML = html; }
+
+  function renderPips() {
+    $('#pips').innerHTML = Array.from({ length: ROUND }, (_, i) => `<span class="pip ${i < round.length ? 'done' : ''}"></span>`).join('');
+  }
+  function renderStats() {
+    $('#best').textContent = saved.best ? saved.best + ' ms' : '—';
+    const last5 = saved.history.slice(-5);
+    $('#avg5').textContent = last5.length === 5 ? avg(last5) + ' ms' : '—';
+    $('#early').textContent = saved.early;
+  }
+  function renderStrip() {
+    const sc = $('#scale'), x = v => ((Math.min(HI, Math.max(LO, v)) - LO) / (HI - LO)) * 100;
+    let h = `<div class="band" style="left:${x(200)}%;width:${x(270) - x(200)}%"><span>typical 200–270</span></div>`;
+    for (let t = LO; t <= HI; t += 100) h += `<span class="tick" style="left:${x(t)}%">${t}</span>`;
+    const recent = saved.history.slice(-20);
+    recent.forEach((v, i) => {
+      const last = i === recent.length - 1, old = i < recent.length - ROUND;
+      h += `<span class="mark ${last ? 'last' : ''} ${old ? 'old' : ''}" style="left:${x(v)}%;height:${last ? 100 : 62}%" title="${v} ms"></span>`;
+    });
+    sc.innerHTML = h;
+    $('#stripLabel').textContent = recent.length ? `Last ${recent.length} attempts · ms` : 'Recent attempts · ms (none yet)';
+  }
+
+  function setPhase(p) { phase = p; stage.className = p === 'early' ? 'early' : ''; lamp.className = 'lamp ' + (p === 'waiting' ? 'waiting' : p === 'go' ? 'go' : ''); }
+
+  function arm() {
+    clearTimeout(timer);
+    if (round.length >= ROUND) round = [];
+    setPhase('waiting');
+    setReadout(null); setVerdict('');
+    setMsg('Wait for the red dot…');
+    renderPips();
+    timer = setTimeout(() => {
+      setPhase('go');
+      setMsg('<strong>Tap!</strong>');
+      // Time from the frame the dot is drawn in.
+      requestAnimationFrame(t => { shownAt = t; });
+      shownAt = performance.now();
+    }, MIN_DELAY + Math.random() * (MAX_DELAY - MIN_DELAY));
+  }
+
+  function hit(stamp) {
+    const ms = Math.max(0, Math.round(stamp - shownAt));
+    round.push(ms);
+    saved.history.push(ms); if (saved.history.length > 200) saved.history.shift();
+    const newBest = !saved.best || ms < saved.best;
+    if (newBest) saved.best = ms;
+    persist();
+    setReadout(ms);
+    const [vt, vc] = verdictFor(ms); setVerdict(newBest ? 'New best' : vt, newBest ? 'v-elite' : vc);
+    renderPips(); renderStats(); renderStrip();
+    if (round.length >= ROUND) {
+      setPhase('summary');
+      const a = avg(round), b = Math.min(...round);
+      setMsg(`Round done. Average <strong>${a} ms</strong>, best <strong>${b} ms</strong>. Tap to start a new round.`);
+    } else {
+      setPhase('result');
+      setMsg(`Attempt ${round.length} of ${ROUND}. Tap to go again.`);
+    }
+  }
+
+  function tooSoon() {
+    clearTimeout(timer);
+    saved.early += 1; persist();
+    setPhase('early');
+    setReadout(null); setVerdict('Too soon', 'v-early');
+    setMsg('You tapped before the dot appeared. That one doesn\'t count. Tap to try again.');
+    renderStats();
+  }
+
+  function press(stamp) {
+    if (phase === 'waiting') return tooSoon();
+    if (phase === 'go') return hit(stamp);
+    arm(); // idle, result, early, summary
+  }
+
+  // pointerdown fires earlier than click; event.timeStamp shares performance.now()'s clock.
+  stage.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); press(e.timeStamp || performance.now()); });
+  window.addEventListener('keydown', e => {
+    if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); press(e.timeStamp || performance.now()); }
+  });
+  stage.addEventListener('contextmenu', e => e.preventDefault());
+
+  $('#clear').addEventListener('click', () => {
+    saved = { best: null, history: [], early: 0 }; round = []; persist();
+    renderStats(); renderStrip(); renderPips();
+  });
+
+  // Opening state: show an example readout until the first tap.
+  renderPips(); renderStats(); renderStrip();
+  if (saved.history.length) { setReadout(saved.history[saved.history.length - 1]); setVerdict('Last time', ''); }
+})();
+</script>
+</body>
+</html>
