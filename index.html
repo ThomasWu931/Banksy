@@ -150,11 +150,11 @@
 
     <div id="setup">
       <div class="slider"><input type="range" id="dur" min="5" max="120" step="5" value="25" aria-label="Session length in minutes"></div>
-      <label class="toggle"><input type="checkbox" id="strict" checked> Strict mode: leaving this tab for 10s+ forfeits the session</label>
+      <label class="toggle"><input type="checkbox" id="strict" checked> Strict mode: leaving this tab for 10s+ ends the session early</label>
     </div>
 
     <button class="btn primary" id="start">Start</button>
-    <button class="btn ghost hidden" id="quit">Quit</button>
+    <button class="btn ghost hidden" id="quit">Stop</button>
   </section>
 
   <!-- WALLET -->
@@ -166,8 +166,8 @@
     </div>
     <div class="stats">
       <div class="stat"><b class="num" id="stEarned">$0.00</b><span>Total earned</span></div>
-      <div class="stat"><b class="num" id="stDone">0</b><span>Sessions paid</span></div>
-      <div class="stat"><b class="num" id="stFail">0</b><span>Forfeited</span></div>
+      <div class="stat"><b class="num" id="stDone">0</b><span>Finished</span></div>
+      <div class="stat"><b class="num" id="stFail">0</b><span>Ended early</span></div>
     </div>
     <div class="sync" id="syncBox"><span><span class="dot" id="syncDot"></span><span id="syncText">Saved on this device only</span></span></div>
 
@@ -415,14 +415,14 @@
     $('#prog').style.strokeDashoffset = CIRC * (1 - p);
     $('#time').textContent = fmtTime(remain);
     if (s) {
-      const accrued = Math.min(mins, Math.floor((now - s.start) / MIN_MS));
-      $('#earn').innerHTML = `${short(accrued)} of ${short(mins)}<small>Paid out when the timer hits zero</small>`;
+      const pct = Math.floor(p * 100);
+      $('#earn').innerHTML = `${short(partialPay(s, now))} if you stop now<small>${pct}% done × ${pct}% multiplier · ${short(mins)} if you finish</small>`;
     } else {
       $('#earn').innerHTML = `${mins} min · pays ${short(mins)}`;
     }
     const strict = s ? s.strict !== false : state.strict;
     $('#hint').textContent = s
-      ? (strict ? 'Stay on this page. Leave for more than 10s and you forfeit the session.' : 'Keep going. Finish to get paid.')
+      ? (strict ? 'Stay on this page. Leaving for more than 10s ends the session early.' : 'Keep going. Finishing pays the full amount.')
       : 'Start a session and stay on this page to get paid.';
     $('#setup').classList.toggle('hidden', !!s);
     $('#start').classList.toggle('hidden', !!s);
@@ -446,13 +446,20 @@
       actions: [{ label: 'Collect', cls: 'primary' }] });
   }
 
-  function forfeit(reason) {
+  // Ending early pays (full amount) × (share of time done) × (same share as a multiplier).
+  // e.g. a 50¢ session stopped at 25 min: 50¢ × 0.5 × 0.5 = 12.5¢ → 12¢ (rounded down to whole cents).
+  const progressAt = (s, at) => Math.max(0, Math.min(1, (at - s.start) / (s.end - s.start)));
+  const partialPay = (s, at) => { const p = progressAt(s, at); return Math.floor(s.minutes * p * p); };
+
+  function endEarly(reason, at) {
     const s = session; if (!s) return;
     session = null;
-    recordSession({ id: uid(), minutes: s.minutes, date: Date.now(), dead: true }, 0);
+    const p = progressAt(s, at), pct = Math.floor(p * 100), pay = partialPay(s, at);
+    recordSession({ id: uid(), minutes: s.minutes, earned: pay, progress: Math.round(p * 1000) / 1000, date: at, dead: true }, pay);
     lastCoins = null; renderAll();
-    modal({ art: coinStack(4, true), title: 'Session forfeited', body: reason + ' Nothing was paid out.',
-      actions: [{ label: 'Try again', cls: 'primary' }] });
+    modal({ art: coinStack(pay ? Math.max(1, Math.round(p * 6)) : 4, !pay), big: pay ? '+' + short(pay) : '', title: 'Session ended early',
+      body: `${reason} You finished ${pct}% of the time, so you got ${short(s.minutes)} × ${pct}% × ${pct}% = ${short(pay)}.`,
+      actions: [{ label: pay ? 'Collect' : 'OK', cls: 'primary' }] });
   }
 
   const isStrict = () => (session ? session.strict !== false : state.strict);
@@ -477,7 +484,7 @@
       const now = Date.now();
       if (now - hiddenAt > GRACE_MS) {
         if (s.end <= hiddenAt + GRACE_MS) complete();
-        else forfeit('You left the page during the session.');
+        else endEarly('You left the page.', hiddenAt);
       }
     }
     hiddenAt = null; tick();
@@ -488,7 +495,7 @@
     const now = Date.now(), seen = s.lastSeen || s.start;
     if (!isStrict()) { if (now >= s.end) complete(); return; }
     if (now >= s.end && s.end <= seen + GRACE_MS) complete();
-    else if (now - seen > GRACE_MS) forfeit('You closed or left the page during the session.');
+    else if (now - seen > GRACE_MS) endEarly('You closed or left the page.', seen);
   }
 
   window.addEventListener('beforeunload', e => { if (session) { e.preventDefault(); e.returnValue = ''; } });
@@ -587,8 +594,8 @@
   $('#strict').addEventListener('change', e => setPref('strict', e.target.checked));
   $('#start').addEventListener('click', start);
   $('#quit').addEventListener('click', () => modal({
-    title: 'Quit this session?', body: 'You\'ll forfeit it and won\'t be paid anything.',
-    actions: [{ label: 'Keep going', cls: 'primary' }, { label: 'Quit', cls: 'danger', fn: () => forfeit('You quit early.') }],
+    title: 'Stop this session?', body: `Stopping now pays ${short(partialPay(session, Date.now()))}. Finishing pays ${short(session.minutes)}.`,
+    actions: [{ label: 'Keep going', cls: 'primary' }, { label: 'Stop', cls: 'danger', fn: () => endEarly('You stopped early.', Date.now()) }],
   }));
   $('#redeemBtn').addEventListener('click', () => {
     const c = pickedCents();
